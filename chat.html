@@ -1,0 +1,855 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Chat de Amor</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
+  <style>
+    :root {
+      /* Paleta de cores principal */
+      --primary-dark: #1a1a2e;
+      --primary: #4834d4;
+      --primary-light: #6f5ff6;
+      --secondary: #ffaac3;
+      --accent: #fd6f96;
+      
+      /* Cores do chat */
+      --bg-color: #f8f9fb;
+      --chat-bg: #ffffff;
+      --sent-bg: #e8f3ff;
+      --sent-color: #1a1a2e;
+      --received-bg: #f5f5f5;
+      --received-color: #1a1a2e;
+      --typing-color: #6f5ff6;
+      --header-bg: #ffffff;
+      --input-bg: #ffffff;
+      --border-color: #e1e1e1;
+      --divider-color: #f0f0f0;
+      --shadow: 0 8px 30px rgba(0, 0, 0, 0.05);
+      --time-color: #999;
+      --status-read: #4834d4;
+      --status-sent: #b3b3b3;
+    }
+
+    /* Tema escuro */
+    .dark-theme {
+      --bg-color: #121212;
+      --chat-bg: #1e1e1e;
+      --sent-bg: #3d3a4b;
+      --sent-color: #f5f5f5;
+      --received-bg: #2a2a2a;
+      --received-color: #f5f5f5;
+      --typing-color: #b3a5ff;
+      --header-bg: #1a1a2e;
+      --input-bg: #2a2a2a;
+      --border-color: #333;
+      --divider-color: #333;
+      --shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
+      --time-color: #aaa;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Poppins', sans-serif;
+      background-color: var(--bg-color);
+      color: var(--sent-color);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overscroll-behavior: none;
+    }
+
+    /* Estilos para o container do chat */
+    .chat-container {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      width: 100%;
+      max-width: 768px;
+      margin: 0 auto;
+      background-color: var(--chat-bg);
+    }
+
+    /* Cabeçalho do chat */
+    .chat-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      background-color: var(--header-bg);
+      border-bottom: 1px solid var(--border-color);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .chat-header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .header-icon {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      transition: background-color 0.2s;
+      font-size: 1.2rem;
+      color: var(--sent-color);
+    }
+
+    .header-icon:hover {
+      background-color: var(--divider-color);
+    }
+
+    .chat-header-user {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .chat-header-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      overflow: hidden;
+      background-color: var(--divider-color);
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      font-weight: 500;
+      color: white;
+      background-color: var(--primary);
+    }
+
+    .avatar-initial {
+      text-transform: uppercase;
+    }
+
+    .online-indicator {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background-color: #4CAF50;
+      position: absolute;
+      bottom: 1px;
+      right: 1px;
+      border: 2px solid var(--header-bg);
+    }
+
+    .online-indicator.offline {
+      background-color: #bdbdbd;
+    }
+
+    .chat-header-info {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .chat-header-info h3 {
+      font-size: 1rem;
+      font-weight: 500;
+      margin: 0;
+      color: var(--sent-color);
+    }
+
+    .chat-header-info p {
+      font-size: 0.75rem;
+      color: var(--time-color);
+      margin: 0;
+    }
+
+    .chat-header-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* Menu dropdown */
+    .menu-button {
+      position: relative;
+    }
+
+    .dropdown-menu {
+      position: absolute;
+      top: 45px;
+      right: 0;
+      background-color: var(--chat-bg);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      width: 180px;
+      padding: 8px;
+      display: none;
+      z-index: 100;
+      border: 1px solid var(--border-color);
+    }
+
+    .dropdown-menu.show {
+      display: block;
+    }
+
+    .dropdown-item {
+      padding: 10px 12px;
+      font-size: 0.9rem;
+      color: var(--sent-color);
+      cursor: pointer;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .dropdown-item:hover {
+      background-color: var(--divider-color);
+    }
+
+    .dropdown-item i {
+      font-size: 0.95rem;
+      width: 20px;
+      text-align: center;
+    }
+
+    /* Área de mensagens */
+    .chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      scrollbar-width: thin;
+      background-color: var(--bg-color);
+    }
+
+    .date-divider {
+      text-align: center;
+      margin: 16px 0;
+      position: relative;
+    }
+
+    .date-divider span {
+      background-color: var(--bg-color);
+      color: var(--time-color);
+      font-size: 0.75rem;
+      padding: 0 10px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .date-divider::before {
+      content: "";
+      position: absolute;
+      top: 50%;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background-color: var(--border-color);
+      z-index: 0;
+    }
+
+    /* Mensagens */
+    .message {
+      display: flex;
+      margin-bottom: 12px;
+      max-width: 80%;
+    }
+
+    .message.sent {
+      align-self: flex-end;
+    }
+    
+    .message.received {
+      align-self: flex-start;
+    }
+
+    .message-bubble {
+      padding: 10px 12px;
+      border-radius: 18px;
+      position: relative;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    }
+
+    .message.sent .message-bubble {
+      background-color: var(--sent-bg);
+      color: var(--sent-color);
+      border-top-right-radius: 4px;
+    }
+
+    .message.received .message-bubble {
+      background-color: var(--received-bg);
+      color: var(--received-color);
+      border-top-left-radius: 4px;
+    }
+
+    .message-text {
+      font-size: 0.95rem;
+      line-height: 1.4;
+      word-wrap: break-word;
+    }
+
+    .message-meta {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      margin-top: 2px;
+      gap: 4px;
+      font-size: 0.7rem;
+      color: var(--time-color);
+    }
+
+    .message-status {
+      margin-left: 2px;
+    }
+
+    .message-status .fa-check-double {
+      color: var(--status-read);
+    }
+
+    /* Input do chat */
+    .chat-input-container {
+      padding: 12px 16px;
+      display: flex;
+      align-items: flex-end;
+      gap: 8px;
+      border-top: 1px solid var(--border-color);
+      background-color: var(--header-bg);
+      position: sticky;
+      bottom: 0;
+    }
+
+    .chat-input-wrapper {
+      flex: 1;
+      display: flex;
+      align-items: flex-end;
+      background-color: var(--input-bg);
+      border-radius: 18px;
+      border: 1px solid var(--border-color);
+      padding: 0 4px;
+      transition: border-color 0.3s;
+    }
+
+    .chat-input-wrapper:focus-within {
+      border-color: var(--primary-light);
+    }
+
+    .chat-input {
+      flex: 1;
+      max-height: 100px;
+      overflow-y: auto;
+    }
+
+    .chat-input textarea {
+      width: 100%;
+      border: none;
+      outline: none;
+      padding: 12px 8px;
+      resize: none;
+      font-family: 'Poppins', sans-serif;
+      font-size: 0.95rem;
+      background-color: transparent;
+      color: var(--sent-color);
+    }
+
+    .input-action {
+      background: none;
+      border: none;
+      padding: 12px;
+      color: var(--time-color);
+      cursor: pointer;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .input-action:hover {
+      color: var(--primary);
+      background-color: var(--divider-color);
+    }
+
+    .send-button {
+      background-color: var(--primary);
+      border: none;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+
+    .send-button:hover {
+      background-color: var(--primary-light);
+    }
+
+    /* Notificação */
+    .notification {
+      position: fixed;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background-color: var(--chat-bg);
+      box-shadow: var(--shadow);
+      border-radius: 12px;
+      padding: 15px 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      transition: transform 0.3s ease-out;
+      z-index: 2000;
+      width: 90%;
+      max-width: 380px;
+      border-left: 5px solid var(--primary);
+      opacity: 0;
+      visibility: hidden;
+    }
+
+    .notification.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .notification-error {
+      border-left: 5px solid #ff4757;
+    }
+
+    .notification-icon {
+      font-size: 1.5rem;
+      color: var(--primary);
+    }
+
+    .notification-error .notification-icon {
+      color: #ff4757;
+    }
+
+    .notification-content {
+      flex: 1;
+    }
+
+    .notification-title {
+      font-weight: 600;
+      font-size: 0.95rem;
+      margin-bottom: 2px;
+      color: var(--sent-color);
+    }
+
+    .notification-message {
+      font-size: 0.85rem;
+      color: var(--time-color);
+    }
+
+    /* Media queries para responsividade */
+    @media (max-width: 768px) {
+      .chat-container {
+        width: 100%;
+        border-radius: 0;
+      }
+    }
+
+    /* Estado de carregamento */
+    #loading-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(255, 255, 255, 0.9);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+    }
+
+    .spinner {
+      width: 50px;
+      height: 50px;
+      border: 5px solid var(--divider-color);
+      border-radius: 50%;
+      border-top-color: var(--primary);
+      animation: spin 1s ease-in-out infinite;
+      margin-bottom: 20px;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    .loading-text {
+      font-size: 1rem;
+      color: var(--primary);
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <!-- Estado de carregamento -->
+  <div id="loading-overlay">
+    <div class="spinner"></div>
+    <div class="loading-text">Conectando ao chat...</div>
+  </div>
+
+  <!-- Container do chat -->
+  <div class="chat-container">
+    <!-- Cabeçalho do chat -->
+    <div class="chat-header">
+      <div class="chat-header-left">
+        <button class="header-icon" id="back-button">
+          <i class="fas fa-arrow-left"></i>
+        </button>
+        <div class="chat-header-user">
+          <div class="chat-header-avatar" id="recipient-avatar">
+            <span class="avatar-initial" id="recipient-initial">?</span>
+            <div class="online-indicator offline" id="online-status"></div>
+          </div>
+          <div class="chat-header-info">
+            <h3 id="recipient-name">Aguardando conexão...</h3>
+            <p id="typing-status">Offline</p>
+          </div>
+        </div>
+      </div>
+      <div class="chat-header-right">
+        <button class="header-icon menu-button" id="menu-button">
+          <i class="fas fa-ellipsis-vertical"></i>
+          <div class="dropdown-menu" id="dropdown-menu">
+            <div class="dropdown-item" id="copy-invite-menu">
+              <i class="fas fa-copy"></i>
+              <span>Copiar código de convite</span>
+            </div>
+            <div class="dropdown-item" id="logout-menu">
+              <i class="fas fa-sign-out-alt"></i>
+              <span>Sair do chat</span>
+            </div>
+          </div>
+        </button>
+      </div>
+    </div>
+
+    <!-- Área de mensagens -->
+    <div class="chat-messages" id="chat-messages">
+      <div class="date-divider">
+        <span>Hoje</span>
+      </div>
+      <!-- As mensagens serão inseridas aqui pelo JavaScript -->
+    </div>
+
+    <!-- Input do chat -->
+    <div class="chat-input-container">
+      <div class="chat-input-wrapper">
+        <div class="chat-input">
+          <textarea id="message-input" placeholder="Digite uma mensagem..." rows="1"></textarea>
+        </div>
+        <button class="input-action">
+          <i class="far fa-smile"></i>
+        </button>
+      </div>
+      <button class="send-button" id="send-button">
+        <i class="fas fa-paper-plane"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- Notificação toast -->
+  <div class="notification" id="notification">
+    <div class="notification-icon">
+      <i class="fas fa-bell"></i>
+    </div>
+    <div class="notification-content">
+      <div class="notification-title" id="notification-title">Título da notificação</div>
+      <div class="notification-message" id="notification-message">Mensagem da notificação.</div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Verificar se o usuário está logado
+      const userName = localStorage.getItem('userName');
+      if (!userName) {
+        // Se não estiver logado, redirecionar para a página de login
+        window.location.href = 'index.html';
+        return;
+      }
+
+      // Elementos DOM
+      const messageInput = document.getElementById('message-input');
+      const sendButton = document.getElementById('send-button');
+      const chatMessages = document.getElementById('chat-messages');
+      const menuButton = document.getElementById('menu-button');
+      const dropdownMenu = document.getElementById('dropdown-menu');
+      const copyInviteMenu = document.getElementById('copy-invite-menu');
+      const logoutMenu = document.getElementById('logout-menu');
+      const backButton = document.getElementById('back-button');
+      const loadingOverlay = document.getElementById('loading-overlay');
+      const recipientName = document.getElementById('recipient-name');
+      const recipientAvatar = document.getElementById('recipient-avatar');
+      const recipientInitial = document.getElementById('recipient-initial');
+      const typingStatus = document.getElementById('typing-status');
+      const onlineStatus = document.getElementById('online-status');
+      
+      // Dados do chat
+      let messages = [];
+      const myInviteCode = localStorage.getItem('myInviteCode') || 'SEM_CODIGO';
+      const inviteCode = localStorage.getItem('inviteCode');
+      
+      // Inicialização do chat
+      function initChat() {
+        // Simular uma conexão
+        setTimeout(() => {
+          loadingOverlay.style.display = 'none';
+          
+          // Se tiver um código de convite, mostrar o nome do destinatário como "Amor"
+          if (inviteCode) {
+            recipientName.textContent = 'Amor';
+            recipientInitial.textContent = 'A';
+            typingStatus.textContent = 'Online';
+            onlineStatus.classList.remove('offline');
+          } else {
+            recipientName.textContent = 'Aguardando conexão...';
+            recipientInitial.textContent = '?';
+            typingStatus.textContent = 'Compartilhe seu código de convite para conectar';
+          }
+          
+          // Mostrar mensagem de boas-vindas
+          addSystemMessage('Bem-vindo ao Chat de Amor! Compartilhe seu código de convite para começar a conversar.');
+        }, 1500);
+        
+        // Ajustar altura do textarea ao digitar
+        messageInput.addEventListener('input', function() {
+          this.style.height = 'auto';
+          this.style.height = (this.scrollHeight) + 'px';
+        });
+      }
+
+      // Adicionar uma mensagem do sistema
+      function addSystemMessage(text) {
+        const messageDiv = document.createElement('div');
+        messageDiv.classList.add('date-divider');
+        messageDiv.innerHTML = `<span>${text}</span>`;
+        chatMessages.appendChild(messageDiv);
+        scrollToBottom();
+      }
+      
+      // Adicionar uma mensagem enviada
+      function addSentMessage(text) {
+        const now = new Date();
+        const timeString = now.getHours().toString().padStart(2, '0') + ':' + 
+                         now.getMinutes().toString().padStart(2, '0');
+        
+        const messageDiv = document.createElement('div');
+        messageDiv.classList.add('message', 'sent');
+        messageDiv.innerHTML = `
+          <div class="message-bubble">
+            <div class="message-text">${text}</div>
+            <div class="message-meta">
+              ${timeString}
+              <span class="message-status">
+                <i class="fas fa-check"></i>
+              </span>
+            </div>
+          </div>
+        `;
+        
+        chatMessages.appendChild(messageDiv);
+        scrollToBottom();
+        
+        // Salvar a mensagem em memória
+        messages.push({
+          text,
+          sent: true,
+          time: now
+        });
+        
+        // Simular recebimento da mensagem
+        if (inviteCode) {
+          setTimeout(() => {
+            // Atualizar status de lido
+            const statusIcon = messageDiv.querySelector('.message-status i');
+            statusIcon.className = 'fas fa-check-double';
+            
+            // Simular resposta após algum tempo
+            simulateResponse();
+          }, 1000);
+        }
+      }
+      
+      // Adicionar uma mensagem recebida
+      function addReceivedMessage(text) {
+        const now = new Date();
+        const timeString = now.getHours().toString().padStart(2, '0') + ':' + 
+                         now.getMinutes().toString().padStart(2, '0');
+        
+        const messageDiv = document.createElement('div');
+        messageDiv.classList.add('message', 'received');
+        messageDiv.innerHTML = `
+          <div class="message-bubble">
+            <div class="message-text">${text}</div>
+            <div class="message-meta">
+              ${timeString}
+            </div>
+          </div>
+        `;
+        
+        chatMessages.appendChild(messageDiv);
+        scrollToBottom();
+        
+        // Salvar a mensagem em memória
+        messages.push({
+          text,
+          sent: false,
+          time: now
+        });
+      }
+      
+      // Simular uma resposta do destinatário
+      function simulateResponse() {
+        // Lista de possíveis respostas
+        const responses = [
+          "Oi amor, tudo bem?",
+          "Estou com saudades de você!",
+          "Te amo muito! ❤️",
+          "Que bom falar com você novamente",
+          "Quando vamos nos ver?",
+          "Estou pensando em você o dia todo",
+          "Me conta como foi seu dia",
+          "Você é incrível, sabia?",
+          "Podemos nos encontrar mais tarde?",
+          "Já te falei hoje o quanto você é especial?",
+          "Meu coração acelera quando você me manda mensagem"
+        ];
+        
+        // Escolher uma resposta aleatória
+        const randomResponse = responses[Math.floor(Math.random() * responses.length)];
+        
+        // Mostrar "digitando..." por alguns segundos
+        typingStatus.textContent = 'Digitando...';
+        
+        setTimeout(() => {
+          // Adicionar a mensagem recebida
+          addReceivedMessage(randomResponse);
+          
+          // Voltar ao status "online"
+          typingStatus.textContent = 'Online';
+        }, 1500);
+      }
+      
+      // Rolar para o fim da conversa
+      function scrollToBottom() {
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+      }
+      
+      // Enviar mensagem
+      function sendMessage() {
+        const text = messageInput.value.trim();
+        if (text) {
+          addSentMessage(text);
+          messageInput.value = '';
+          messageInput.style.height = 'auto';
+        }
+      }
+      
+      // Função para mostrar notificações
+      function showNotification(title, message, isError = false) {
+        const notification = document.getElementById('notification');
+        const notificationTitle = document.getElementById('notification-title');
+        const notificationMessage = document.getElementById('notification-message');
+        
+        notificationTitle.textContent = title;
+        notificationMessage.textContent = message;
+        
+        if (isError) {
+          notification.classList.add('notification-error');
+        } else {
+          notification.classList.remove('notification-error');
+        }
+        
+        notification.classList.add('show');
+        
+        setTimeout(() => {
+          notification.classList.remove('show');
+        }, 3000);
+      }
+      
+      // Event listeners
+      sendButton.addEventListener('click', sendMessage);
+      
+      messageInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          sendMessage();
+        }
+      });
+      
+      // Abrir/fechar menu dropdown
+      menuButton.addEventListener('click', function() {
+        dropdownMenu.classList.toggle('show');
+      });
+      
+      // Clicar fora para fechar o dropdown
+      document.addEventListener('click', function(event) {
+        if (!menuButton.contains(event.target)) {
+          dropdownMenu.classList.remove('show');
+        }
+      });
+      
+      // Copiar código de convite
+      copyInviteMenu.addEventListener('click', function() {
+        dropdownMenu.classList.remove('show');
+        
+        // Criar um elemento de texto temporário
+        const tempInput = document.createElement('input');
+        tempInput.value = myInviteCode;
+        document.body.appendChild(tempInput);
+        tempInput.select();
+        document.execCommand('copy');
+        document.body.removeChild(tempInput);
+        
+        showNotification('Sucesso', 'Código de convite copiado para a área de transferência');
+      });
+      
+      // Logout
+      logoutMenu.addEventListener('click', function() {
+        localStorage.removeItem('inviteCode');
+        window.location.href = 'index.html';
+      });
+      
+      // Botão voltar
+      backButton.addEventListener('click', function() {
+        window.location.href = 'index.html';
+      });
+      
+      // Iniciar o chat
+      initChat();
+    });
+  </script>
+</body>
+</html>

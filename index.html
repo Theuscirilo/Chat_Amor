@@ -10,11 +10,11 @@
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
   <!-- Ícones -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <!-- Firebase (Módulos de SDKs) -->
-  <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-storage-compat.js"></script>
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
   <style>
     :root {
       /* Paleta de cores principal */
@@ -42,23 +42,6 @@
       --status-sent: #b3b3b3;
     }
 
-    /* Tema escuro */
-    .dark-theme {
-      --bg-color: #121212;
-      --chat-bg: #1e1e1e;
-      --sent-bg: #3d3a4b;
-      --sent-color: #f5f5f5;
-      --received-bg: #2a2a2a;
-      --received-color: #f5f5f5;
-      --typing-color: #b3a5ff;
-      --header-bg: #1a1a2e;
-      --input-bg: #2a2a2a;
-      --border-color: #333;
-      --divider-color: #333;
-      --shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
-      --time-color: #aaa;
-    }
-
     * {
       margin: 0;
       padding: 0;
@@ -75,7 +58,7 @@
       overscroll-behavior: none;
     }
 
-    /* Estilos para as telas de login/registro */
+    /* Estilos para as telas de login */
     .auth-container {
       display: flex;
       flex-direction: column;
@@ -112,27 +95,6 @@
       font-size: 0.9rem;
     }
 
-    .auth-tabs {
-      display: flex;
-      border-bottom: 1px solid var(--border-color);
-      margin-bottom: 25px;
-    }
-
-    .auth-tab {
-      flex: 1;
-      text-align: center;
-      padding: 10px;
-      cursor: pointer;
-      font-weight: 500;
-      color: var(--time-color);
-      transition: all 0.3s;
-    }
-
-    .auth-tab.active {
-      color: var(--primary);
-      border-bottom: 2px solid var(--primary);
-    }
-
     .auth-form-group {
       margin-bottom: 20px;
     }
@@ -162,59 +124,6 @@
       box-shadow: 0 0 0 3px rgba(111, 95, 246, 0.2);
     }
 
-    .profile-upload {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      margin-bottom: 25px;
-    }
-
-    .profile-pic-preview {
-      width: 100px;
-      height: 100px;
-      border-radius: 50%;
-      background-color: var(--divider-color);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      overflow: hidden;
-      margin-bottom: 15px;
-      border: 3px solid var(--primary-light);
-      position: relative;
-      background-size: cover;
-      background-position: center;
-    }
-
-    .profile-pic-icon {
-      font-size: 40px;
-      color: var(--primary-light);
-    }
-
-    .profile-pic-preview img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-
-    .upload-btn {
-      background-color: var(--primary-light);
-      color: white;
-      border: none;
-      padding: 8px 15px;
-      border-radius: 20px;
-      font-size: 0.8rem;
-      cursor: pointer;
-      font-family: 'Poppins', sans-serif;
-      transition: all 0.3s;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .upload-btn:hover {
-      background-color: var(--primary);
-    }
-
     .submit-btn {
       background-color: var(--primary);
       color: white;
@@ -234,24 +143,6 @@
       background-color: var(--primary-light);
     }
 
-    .auth-footer {
-      text-align: center;
-      margin-top: 20px;
-      font-size: 0.9rem;
-      color: var(--time-color);
-    }
-
-    .auth-link {
-      color: var(--primary);
-      text-decoration: none;
-      font-weight: 500;
-      cursor: pointer;
-    }
-
-    .auth-link:hover {
-      text-decoration: underline;
-    }
-
     .error-message {
       color: #ff4757;
       font-size: 0.85rem;
@@ -263,35 +154,6 @@
       font-size: 0.85rem;
       margin-top: 5px;
       margin-bottom: 10px;
-    }
-
-    /* Estado offline/conexão */
-    .connection-status {
-      position: fixed;
-      top: 10px;
-      left: 50%;
-      transform: translateX(-50%);
-      background-color: #ff4757;
-      color: white;
-      padding: 8px 15px;
-      border-radius: 20px;
-      font-size: 0.8rem;
-      font-weight: 500;
-      box-shadow: 0 3px 10px rgba(0,0,0,0.1);
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      opacity: 0;
-      transition: opacity 0.3s;
-      z-index: 2000;
-    }
-
-    .connection-status.online {
-      background-color: #3ecf8e;
-    }
-
-    .connection-status.show {
-      opacity: 1;
     }
 
     /* Notificação toast */
@@ -351,40 +213,47 @@
       color: var(--time-color);
     }
 
-    /* Loading spinner dentro do botão */
-    .loading-spinner {
-      display: inline-block;
-      width: 16px;
-      height: 16px;
-      border: 2px solid rgba(255,255,255,0.3);
-      border-radius: 50%;
-      border-top-color: #fff;
-      animation: spin 0.8s linear infinite;
-      margin-right: 8px;
+    .invite-section {
+      margin-top: 20px;
+      padding-top: 20px;
+      border-top: 1px solid var(--border-color);
     }
 
-    @keyframes spin {
-      to {
-        transform: rotate(360deg);
-      }
+    .invite-title {
+      font-size: 1rem;
+      font-weight: 500;
+      margin-bottom: 10px;
+      color: var(--primary);
     }
 
-    /* Chat container */
-    .chat-container {
-      display: none;
-      max-width: 100%;
-      height: 100vh;
-      margin: 0 auto;
-      flex-direction: column;
-      background-color: var(--chat-bg);
+    .invite-input {
       position: relative;
-      overflow: hidden;
-      box-shadow: var(--shadow);
+      margin-bottom: 15px;
     }
 
-    /* Restante do CSS não modificado */
-  </style>
+    .invite-input input {
+      width: 100%;
+      padding: 12px 15px;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      font-family: 'Poppins', sans-serif;
+      font-size: 0.95rem;
+    }
 
+    .invite-input .copy-btn {
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      color: var(--primary);
+      cursor: pointer;
+      font-size: 1.1rem;
+    }
+  </style>
+</head>
+<body>
   <!-- Container de autenticação -->
   <div class="auth-container" id="auth-container">
     <div class="auth-card">
@@ -393,19 +262,14 @@
         <p>Conecte-se com seu amor e comece a conversar</p>
       </div>
 
-      <div class="auth-tabs">
-        <div class="auth-tab active" id="login-tab">Login</div>
-        <div class="auth-tab" id="register-tab">Cadastro</div>
-      </div>
-
       <!-- Formulário de Login -->
       <form id="login-form">
         <div id="login-success-message" class="success-message" style="display: none;"></div>
         
         <div class="auth-form-group">
-          <label for="login-email">Email</label>
-          <input type="email" id="login-email" placeholder="Seu email">
-          <div id="login-email-error" class="error-message" style="display: none;"></div>
+          <label for="login-username">Nome de Usuário</label>
+          <input type="text" id="login-username" placeholder="Seu nome de usuário">
+          <div id="login-username-error" class="error-message" style="display: none;"></div>
         </div>
 
         <div class="auth-form-group">
@@ -414,605 +278,230 @@
           <div id="login-password-error" class="error-message" style="display: none;"></div>
         </div>
 
-        <button type="button" id="login-btn" class="submit-btn">Entrar</button>
-
-        <div class="auth-footer">
-          Ainda não tem uma conta? <span class="auth-link" id="go-to-register">Cadastre-se</span>
+        <div class="auth-form-group">
+          <label for="login-invite">Código de Convite (opcional)</label>
+          <input type="text" id="login-invite" placeholder="Cole o código de convite aqui">
         </div>
-      </form>
 
-      <!-- Formulário de Cadastro -->
-      <form id="register-form" style="display: none;">
-        <div id="register-success-message" class="success-message" style="display: none;"></div>
-        
-        <div class="profile-upload">
-          <div class="profile-pic-preview" id="profile-preview">
-            <i class="far fa-user profile-pic-icon"></i>
+        <button type="button" id="login-btn" class="submit-btn">Entrar no Chat</button>
+
+        <!-- Seção de convite - visível para todos os usuários -->
+        <div class="invite-section">
+          <p class="invite-title">Seu código de convite</p>
+          <div class="invite-input">
+            <input type="text" id="invite-link" readonly value="">
+            <button type="button" id="copy-invite" class="copy-btn">
+              <i class="fas fa-copy"></i>
+            </button>
           </div>
-          <button type="button" id="profile-upload-btn" class="upload-btn">
-            <i class="fas fa-camera"></i> Foto de perfil
-          </button>
-          <input type="file" id="profile-pic-input" accept="image/*" style="display: none;">
-        </div>
-
-        <div class="auth-form-group">
-          <label for="register-name">Nome</label>
-          <input type="text" id="register-name" placeholder="Seu nome completo">
-          <div id="register-name-error" class="error-message" style="display: none;"></div>
-        </div>
-
-        <div class="auth-form-group">
-          <label for="register-email">Email</label>
-          <input type="email" id="register-email" placeholder="Seu email">
-          <div id="register-email-error" class="error-message" style="display: none;"></div>
-        </div>
-
-        <div class="auth-form-group">
-          <label for="register-password">Senha</label>
-          <input type="password" id="register-password" placeholder="Crie uma senha">
-          <div id="register-password-error" class="error-message" style="display: none;"></div>
-        </div>
-
-        <button type="button" id="register-btn" class="submit-btn">Cadastrar</button>
-
-        <div class="auth-footer">
-          Já tem uma conta? <span class="auth-link" id="go-to-login">Fazer login</span>
+          <p class="auth-footer">Compartilhe este código com a pessoa que deseja conversar</p>
         </div>
       </form>
     </div>
   </div>
 
-  <!-- Indicador de status de conexão -->
-  <div class="connection-status" id="connection-status">
-    <i class="fas fa-wifi-slash"></i> Você está offline
-  </div>
-
-  <!-- Container do chat -->
-  <div class="chat-container" id="chat-container">
-    <!-- Restante da estrutura HTML do chat não modificada -->
-  </div>
-
-  <!-- Notificação -->
+  <!-- Notificação toast -->
   <div class="notification" id="notification">
-    <i class="fas fa-info-circle notification-icon"></i>
+    <div class="notification-icon">
+      <i class="fas fa-bell"></i>
+    </div>
     <div class="notification-content">
-      <div class="notification-title" id="notification-title"></div>
-      <div class="notification-message" id="notification-message"></div>
+      <div class="notification-title" id="notification-title">Título da notificação</div>
+      <div class="notification-message" id="notification-message">Mensagem da notificação.</div>
     </div>
   </div>
 
-  <!-- Scripts -->
   <script>
     // Configuração do Firebase
     const firebaseConfig = {
       apiKey: "AIzaSyC6LakJpl51gTNIO9XcZ4gEE55k7QrLeeI",
       authDomain: "login-49652.firebaseapp.com",
       projectId: "login-49652",
-      storageBucket: "login-49652.appspot.com", 
+      storageBucket: "login-49652.firebasestorage.app",
       messagingSenderId: "621728818359",
       appId: "1:621728818359:web:25a9f18e9558551f16d932",
       measurementId: "G-MK12B3C8NQ"
     };
 
-    // Elementos DOM
-    const authContainer = document.getElementById('auth-container');
-    const chatContainer = document.getElementById('chat-container');
-    const loginForm = document.getElementById('login-form');
-    const registerForm = document.getElementById('register-form');
-    const loginTab = document.getElementById('login-tab');
-    const registerTab = document.getElementById('register-tab');
-    const goToRegister = document.getElementById('go-to-register');
-    const goToLogin = document.getElementById('go-to-login');
-    const loginBtn = document.getElementById('login-btn');
-    const registerBtn = document.getElementById('register-btn');
-    const loginEmail = document.getElementById('login-email');
-    const loginPassword = document.getElementById('login-password');
-    const registerName = document.getElementById('register-name');
-    const registerEmail = document.getElementById('register-email');
-    const registerPassword = document.getElementById('register-password');
-    const profilePreview = document.getElementById('profile-preview');
-    const profileUploadBtn = document.getElementById('profile-upload-btn');
-    const profilePicInput = document.getElementById('profile-pic-input');
-    const notification = document.getElementById('notification');
-    const notificationTitle = document.getElementById('notification-title');
-    const notificationMessage = document.getElementById('notification-message');
-    const loginSuccessMessage = document.getElementById('login-success-message');
-    const registerSuccessMessage = document.getElementById('register-success-message');
-    const connectionStatus = document.getElementById('connection-status');
-
-    // Variáveis globais
-    let currentUser = null;
-    let selectedFile = null;
-    let profilePhotoURL = null;
-    let isOnline = navigator.onLine;
-    let firebaseInitialized = false;
-    let auth = null;
-    let db = null;
-    let storage = null;
-    let maxRetries = 3;
-
-    // Monitorar estado da conexão
-    window.addEventListener('online', handleConnectionChange);
-    window.addEventListener('offline', handleConnectionChange);
-
-    function handleConnectionChange() {
-      isOnline = navigator.onLine;
+    // Inicialização do Firebase
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+    
+    document.addEventListener('DOMContentLoaded', function() {
+      // Elementos DOM
+      const loginBtn = document.getElementById('login-btn');
+      const loginUsername = document.getElementById('login-username');
+      const loginPassword = document.getElementById('login-password');
+      const loginInvite = document.getElementById('login-invite');
+      const inviteLink = document.getElementById('invite-link');
+      const copyInvite = document.getElementById('copy-invite');
       
-      if (isOnline) {
-        connectionStatus.classList.add('online');
-        connectionStatus.innerHTML = '<i class="fas fa-wifi"></i> Conectado novamente';
-        connectionStatus.classList.add('show');
-        
-        setTimeout(() => {
-          connectionStatus.classList.remove('show');
-        }, 3000);
-        
-        // Se o Firebase não estiver inicializado, tente inicializar
-        if (!firebaseInitialized) {
-          initializeFirebase();
-        }
-      } else {
-        connectionStatus.classList.remove('online');
-        connectionStatus.innerHTML = '<i class="fas fa-wifi-slash"></i> Você está offline';
-        connectionStatus.classList.add('show');
-      }
-    }
-
-    // Inicializar Firebase com tratamento de erros e reconexão
-    function initializeFirebase() {
-      try {
-        if (!firebase) {
-          showNotification('Erro', 'Firebase não está disponível. Verifique sua conexão com a internet.', true);
-          return false;
-        }
-
-        // Inicializar Firebase
-        if (!firebaseInitialized) {
-          firebase.initializeApp(firebaseConfig);
-          
-          // Configurar persistência para melhor funcionamento offline
-          firebase.firestore().enablePersistence({ synchronizeTabs: true })
-            .catch((err) => {
-              if (err.code === 'failed-precondition') {
-                console.warn('Persistência não pôde ser habilitada: múltiplas abas abertas');
-              } else if (err.code === 'unimplemented') {
-                console.warn('Seu navegador não suporta persistência offline');
-              }
-            });
-            
-          auth = firebase.auth();
-          db = firebase.firestore();
-          storage = firebase.storage();
-          
-          // Monitorar estado da conexão com o Firestore de forma correta
-          db.enableNetwork()
-            .then(() => {
-              connectionStatus.classList.add('online');
-              connectionStatus.innerHTML = '<i class="fas fa-wifi"></i> Conectado ao Firebase';
-              connectionStatus.classList.add('show');
-              
-              setTimeout(() => {
-                connectionStatus.classList.remove('show');
-              }, 3000);
-            })
-            .catch((error) => {
-              console.error('Erro ao conectar ao Firebase:', error);
-              connectionStatus.classList.remove('online');
-              connectionStatus.innerHTML = '<i class="fas fa-wifi-slash"></i> Erro ao conectar ao Firebase';
-              connectionStatus.classList.add('show');
-            });
-          
-          firebaseInitialized = true;
-          return true;
-        }
-        
-        return true;
-      } catch (error) {
-        console.error('Erro ao inicializar Firebase:', error);
-        showNotification('Erro', 'Não foi possível inicializar o Firebase: ' + error.message, true);
-        return false;
-      }
-    }
-
-    // Inicializar Firebase na carga da página
-    if (navigator.onLine) {
-      initializeFirebase();
-    } else {
-      connectionStatus.classList.add('show');
-    }
-
-    // Helper para mostrar erros
-    function showError(element, message) {
-      element.textContent = message;
-      element.style.display = message ? 'block' : 'none';
-    }
-
-    // Helper para mostrar mensagens de sucesso
-    function showSuccess(element, message) {
-      element.textContent = message;
-      element.style.display = message ? 'block' : 'none';
-    }
-
-    // Helper para mostrar notificações
-    function showNotification(title, message, isError = false) {
-      notificationTitle.textContent = title;
-      notificationMessage.textContent = message;
-      
-      if (isError) {
-        notification.classList.add('notification-error');
-      } else {
-        notification.classList.remove('notification-error');
-      }
-      
-      notification.classList.add('show');
-      
-      setTimeout(() => {
-        notification.classList.remove('show');
-      }, 3000);
-    }
-
-    // Função para tentar operação com Firebase com novas tentativas
-    async function retryOperation(operation, maxAttempts = 3) {
-      let lastError;
-      
-      for (let attempt = 0; attempt < maxAttempts; attempt++) {
-        try {
-          // Verificar se estamos online
-          if (!navigator.onLine) {
-            throw new Error('Você está offline. Por favor, verifique sua conexão com a internet.');
-          }
-          
-          // Verificar se o Firebase está inicializado
-          if (!firebaseInitialized) {
-            const initialized = initializeFirebase();
-            if (!initialized) {
-              throw new Error('Não foi possível conectar ao Firebase. Tente novamente.');
-            }
-          }
-          
-          // Executar a operação
-          return await operation();
-        } catch (error) {
-          console.error(`Tentativa ${attempt + 1} falhou:`, error);
-          lastError = error;
-          
-          // Se for um erro específico de rede ou Firebase offline
-          if (error.code === 'unavailable' || 
-              error.code === 'failed-precondition' || 
-              error.message.includes('offline') || 
-              error.message.includes('network')) {
-            
-            // Mostrar mensagem apenas se não for a última tentativa
-            if (attempt < maxAttempts - 1) {
-              showNotification('Reconectando', 'Tentando reconectar ao Firebase...', false);
-              
-              // Esperar antes de tentar novamente (com tempo exponencial)
-              await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, attempt)));
-              
-              // Tentar reinicializar o Firebase
-              initializeFirebase();
-              continue;
-            }
-          }
-          
-          // Se for qualquer outro tipo de erro ou a última tentativa, quebrar o loop
-          break;
-        }
-      }
-      
-      // Se chegamos aqui, todas as tentativas falharam
-      throw lastError;
-    }
-
-    // Toggle entre as abas de login e registro
-    loginTab.addEventListener('click', () => {
-      loginTab.classList.add('active');
-      registerTab.classList.remove('active');
-      loginForm.style.display = 'block';
-      registerForm.style.display = 'none';
-    });
-
-    registerTab.addEventListener('click', () => {
-      registerTab.classList.add('active');
-      loginTab.classList.remove('active');
-      registerForm.style.display = 'block';
-      loginForm.style.display = 'none';
-    });
-
-    goToRegister.addEventListener('click', () => {
-      registerTab.click();
-    });
-
-    goToLogin.addEventListener('click', () => {
-      loginTab.click();
-    });
-
-    // Upload de foto de perfil
-    profileUploadBtn.addEventListener('click', () => {
-      profilePicInput.click();
-    });
-
-    profilePicInput.addEventListener('change', (e) => {
-      const file = e.target.files[0];
-      if (file) {
-        selectedFile = file;
-        const reader = new FileReader();
-        reader.onload = (event) => {
-          profilePreview.innerHTML = '';
-          profilePreview.style.backgroundImage = `url(${event.target.result})`;
-        };
-        reader.readAsDataURL(file);
-      }
-    });
-
-    // Login
-    loginBtn.addEventListener('click', async () => {
-      const email = loginEmail.value.trim();
-      const password = loginPassword.value.trim();
-      
-      // Reset de mensagens
-      showError(document.getElementById('login-email-error'), '');
-      showError(document.getElementById('login-password-error'), '');
-      showSuccess(loginSuccessMessage, '');
-      
-      // Validação básica
-      let hasError = false;
-      
-      if (!email) {
-        showError(document.getElementById('login-email-error'), 'Por favor, insira seu email');
-        hasError = true;
-      }
-      
-      if (!password) {
-        showError(document.getElementById('login-password-error'), 'Por favor, insira sua senha');
-        hasError = true;
-      }
-      
-      if (hasError) return;
-      
-      // Verificar conexão primeiro
-      if (!navigator.onLine) {
-        showNotification('Sem conexão', 'Você está offline. Conecte-se à internet para fazer login.', true);
-        return;
-      }
-      
-      // Verificar se Firebase está disponível
-      if (!firebaseInitialized) {
-        const initialized = initializeFirebase();
-        if (!initialized) {
-          showNotification('Erro', 'Não foi possível conectar ao Firebase. Tente novamente.', true);
-          return;
-        }
-      }
-      
-      loginBtn.innerHTML = '<span class="loading-spinner"></span> Entrando...';
-      loginBtn.disabled = true;
-      
-      try {
-        await retryOperation(async () => {
-          // Login no Firebase
-          const userCredential = await auth.signInWithEmailAndPassword(email, password);
-          
-          // Mostrar mensagem de sucesso
-          showSuccess(loginSuccessMessage, '✅ Login realizado com sucesso!');
-          
-          // Mostrar notificação
-          showNotification('Login bem-sucedido', 'Bem-vindo de volta!');
-          
-          // Obter dados do usuário
-          const userDoc = await db.collection('users').doc(userCredential.user.uid).get();
-          
-          if (userDoc.exists) {
-            currentUser = {
-              id: userCredential.user.uid,
-              ...userDoc.data()
-            };
-            
-            // Atualizar status online
-            await db.collection('users').doc(currentUser.id).update({
-              online: true,
-              lastSeen: firebase.firestore.FieldValue.serverTimestamp()
-            });
-            
-            // Exibir interface do chat com um pequeno delay para mostrar a mensagem de sucesso
-            setTimeout(() => {
-              showChatInterface();
-            }, 1500);
-          } else {
-            throw new Error('Dados do usuário não encontrados.');
-          }
-        });
-      } catch (error) {
-        console.error('Erro de login:', error);
-        
-        if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
-          showError(document.getElementById('login-email-error'), 'Email ou senha incorretos');
-        } else if (error.code === 'auth/too-many-requests') {
-          showError(document.getElementById('login-email-error'), 'Muitas tentativas de login. Tente novamente mais tarde.');
-        } else if (error.message && error.message.includes('offline')) {
-          showNotification('Erro de conexão', 'Você está offline. Verifique sua conexão com a internet.', true);
-        } else {
-          showNotification('Erro de login', error.message, true);
-        }
-      } finally {
-        loginBtn.innerHTML = 'Entrar';
-        loginBtn.disabled = false;
-      }
-    });
-
-    // Registro
-    registerBtn.addEventListener('click', async () => {
-      const name = registerName.value.trim();
-      const email = registerEmail.value.trim();
-      const password = registerPassword.value.trim();
-      
-      // Reset de mensagens
-      showError(document.getElementById('register-name-error'), '');
-      showError(document.getElementById('register-email-error'), '');
-      showError(document.getElementById('register-password-error'), '');
-      showSuccess(registerSuccessMessage, '');
-      
-      // Validação básica
-      let hasError = false;
-      
-      if (!name) {
-        showError(document.getElementById('register-name-error'), 'Por favor, insira seu nome');
-        hasError = true;
-      }
-      
-      if (!email) {
-        showError(document.getElementById('register-email-error'), 'Por favor, insira seu email');
-        hasError = true;
-      }
-      
-      if (!password) {
-        showError(document.getElementById('register-password-error'), 'Por favor, insira sua senha');
-        hasError = true;
-      } else if (password.length < 6) {
-        showError(document.getElementById('register-password-error'), 'A senha deve ter pelo menos 6 caracteres');
-        hasError = true;
-      }
-      
-      if (hasError) return;
-      
-      // Verificar conexão primeiro
-      if (!navigator.onLine) {
-        showNotification('Sem conexão', 'Você está offline. Conecte-se à internet para fazer cadastro.', true);
-        return;
-      }
-      
-      // Verificar se Firebase está disponível
-      if (!firebaseInitialized) {
-        const initialized = initializeFirebase();
-        if (!initialized) {
-          showNotification('Erro', 'Não foi possível conectar ao Firebase. Tente novamente.', true);
-          return;
-        }
-      }
-      
-      registerBtn.innerHTML = '<span class="loading-spinner"></span> Cadastrando...';
-      registerBtn.disabled = true;
-      
-      try {
-        await retryOperation(async () => {
-          // Criar usuário no Firebase Auth
-          const userCredential = await auth.createUserWithEmailAndPassword(email, password);
-          const user = userCredential.user;
-          
-          // Upload da foto de perfil se tiver sido selecionada
-          if (selectedFile) {
-            const storageRef = storage.ref();
-            const fileRef = storageRef.child(`profile_pics/${user.uid}`);
-            await fileRef.put(selectedFile);
-            profilePhotoURL = await fileRef.getDownloadURL();
-          }
-          
-          // Salvar dados do usuário no Firestore
-          await db.collection('users').doc(user.uid).set({
-            name: name,
-            email: email,
-            photoURL: profilePhotoURL,
-            online: true,
-            lastSeen: firebase.firestore.FieldValue.serverTimestamp(),
-            createdAt: firebase.firestore.FieldValue.serverTimestamp()
-          });
-          
-          // Atualizar usuário atual
-          currentUser = {
-            id: user.uid,
-            name,
-            email,
-            photoURL: profilePhotoURL,
-            online: true
-          };
-          
-          // Mostrar mensagem de sucesso
-          showSuccess(registerSuccessMessage, '✅ Cadastro realizado com sucesso! Bem-vindo(a) ao Chat de Amor.');
-          
-          // Mostrar notificação
-          showNotification('Cadastro bem-sucedido', 'Seja bem-vindo ao Chat de Amor!');
-          
-          // Exibir interface do chat com um pequeno delay para mostrar a mensagem de sucesso
-          setTimeout(() => {
-            showChatInterface();
-          }, 2000);
-        });
-      } catch (error) {
-        console.error('Erro de registro:', error);
-        
-        if (error.code === 'auth/email-already-in-use') {
-          showError(document.getElementById('register-email-error'), 'Este email já está em uso');
-        } else if (error.code === 'auth/invalid-email') {
-          showError(document.getElementById('register-email-error'), 'Email inválido');
-        } else if (error.code === 'auth/weak-password') {
-          showError(document.getElementById('register-password-error'), 'Senha muito fraca');
-        } else if (error.message && error.message.includes('offline')) {
-          showNotification('Erro de conexão', 'Você está offline. Verifique sua conexão com a internet.', true);
-        } else {
-          showNotification('Erro de registro', error.message, true);
-        }
-      } finally {
-        registerBtn.innerHTML = 'Cadastrar';
-        registerBtn.disabled = false;
-      }
-    });
-
-    // Mostrar interface do chat
-    function showChatInterface() {
-      authContainer.style.display = 'none';
-      chatContainer.style.display = 'flex';
-      
-      // Lógica adicional do chat seria implementada aqui
-      // ...
-    }
-
-    // Verificar se já existe um usuário autenticado
-    if (firebaseInitialized) {
-      auth.onAuthStateChanged(async (user) => {
+      // Verificar se já está logado
+      auth.onAuthStateChanged(function(user) {
         if (user) {
-          try {
-            const userDoc = await db.collection('users').doc(user.uid).get();
-            
-            if (userDoc.exists) {
-              currentUser = {
-                id: user.uid,
-                ...userDoc.data()
-              };
-              
-              // Atualizar status online
-              await db.collection('users').doc(currentUser.id).update({
-                online: true,
-                lastSeen: firebase.firestore.FieldValue.serverTimestamp()
-              });
-              
-              // Exibir interface do chat
-              showChatInterface();
+          // Se já estiver autenticado, verificar se já tem convite e nome de usuário
+          const userId = user.uid;
+          db.collection('users').doc(userId).get().then(doc => {
+            if (doc.exists) {
+              const userData = doc.data();
+              if (userData.inviteCode) {
+                inviteLink.value = userData.inviteCode;
+              } else {
+                updateInviteLink(userId);
+              }
             } else {
-              // Usuário existe no Auth mas não no Firestore
-              auth.signOut();
+              updateInviteLink(userId);
             }
-          } catch (error) {
-            console.error('Erro ao verificar usuário:', error);
-            
-            // Se for um erro de conexão, mantenha o usuário conectado
-            if (!error.message.includes('offline') && !error.code === 'unavailable') {
-              auth.signOut();
-            }
-          }
+          });
+        } else {
+          // Se não estiver logado, gerar um convite temporário
+          inviteLink.value = generateInviteCode();
         }
       });
-    }
 
-    // Atalhos para mostrar as mensagens de sucesso (para testes)
-    function simularLoginBemSucedido() {
-      showSuccess(loginSuccessMessage, '✅ Login realizado com sucesso!');
-      showNotification('Login bem-sucedido', 'Bem-vindo de volta!');
-    }
-
-    function simularCadastroBemSucedido() {
-      showSuccess(registerSuccessMessage, '✅ Cadastro realizado com sucesso! Bem-vindo(a) ao Chat de Amor.');
-      showNotification('Cadastro bem-sucedido', 'Seja bem-vindo ao Chat de Amor!');
-    }
+      // Gerar código de convite
+      function generateInviteCode() {
+        return Math.random().toString(36).substring(2, 10).toUpperCase();
+      }
+      
+      // Atualizar link de convite e salvar no Firestore
+      function updateInviteLink(userId) {
+        const inviteCode = generateInviteCode();
+        inviteLink.value = inviteCode;
+        
+        if (userId) {
+          db.collection('users').doc(userId).set({
+            inviteCode: inviteCode,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+          }, { merge: true });
+        }
+        
+        return inviteCode;
+      }
+      
+      // Copiar link de convite
+      copyInvite.addEventListener('click', function() {
+        inviteLink.select();
+        document.execCommand('copy');
+        showNotification('Sucesso', 'Código de convite copiado para a área de transferência');
+      });
+      
+      // Processamento de login
+      loginBtn.addEventListener('click', function() {
+        const username = loginUsername.value.trim();
+        const password = loginPassword.value.trim();
+        const inviteCode = loginInvite.value.trim();
+        
+        // Validação simples
+        if (!username || !password) {
+          showNotification('Erro', 'Por favor, preencha seu nome de usuário e senha', true);
+          return;
+        }
+        
+        // Criar email a partir do nome de usuário para autenticação Firebase
+        const email = `${username.replace(/\s+/g, '').toLowerCase()}@chatdeamor.app`;
+        
+        // Fazer login ou criar usuário se não existir
+        auth.signInWithEmailAndPassword(email, password)
+          .then((userCredential) => {
+            // Login bem sucedido
+            const user = userCredential.user;
+            // Salvar dados do usuário
+            saveUserData(user.uid, username, inviteCode);
+          })
+          .catch((error) => {
+            if (error.code === 'auth/user-not-found') {
+              // Criar novo usuário
+              auth.createUserWithEmailAndPassword(email, password)
+                .then((userCredential) => {
+                  const user = userCredential.user;
+                  // Salvar dados do usuário
+                  saveUserData(user.uid, username, inviteCode);
+                })
+                .catch((error) => {
+                  showNotification('Erro', error.message, true);
+                });
+            } else {
+              showNotification('Erro', error.message, true);
+            }
+          });
+      });
+      
+      // Salvar dados do usuário no Firestore
+      function saveUserData(userId, username, inviteCode) {
+        // Salvar no localStorage para acesso rápido
+        localStorage.setItem('userName', username);
+        localStorage.setItem('userId', userId);
+        
+        // Dados do usuário
+        const userData = {
+          username: username,
+          lastActive: firebase.firestore.FieldValue.serverTimestamp(),
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        };
+        
+        // Se fornecido um código de convite, salvar também
+        if (inviteCode) {
+          localStorage.setItem('inviteCode', inviteCode);
+          userData.partnerInviteCode = inviteCode;
+        }
+        
+        // Se não tiver um código próprio, gerar um
+        if (!inviteLink.value) {
+          userData.inviteCode = generateInviteCode();
+          inviteLink.value = userData.inviteCode;
+        } else {
+          userData.inviteCode = inviteLink.value;
+        }
+        
+        // Salvar no Firestore
+        db.collection('users').doc(userId).set(userData, { merge: true })
+          .then(() => {
+            // Redirecionar para a página de chat
+            window.location.href = 'chat.html';
+          })
+          .catch((error) => {
+            showNotification('Erro', 'Erro ao salvar dados: ' + error.message, true);
+          });
+      }
+      
+      // Função para mostrar notificações
+      function showNotification(title, message, isError = false) {
+        const notification = document.getElementById('notification');
+        const notificationTitle = document.getElementById('notification-title');
+        const notificationMessage = document.getElementById('notification-message');
+        
+        notificationTitle.textContent = title;
+        notificationMessage.textContent = message;
+        
+        if (isError) {
+          notification.classList.add('notification-error');
+        } else {
+          notification.classList.remove('notification-error');
+        }
+        
+        notification.classList.add('show');
+        
+        setTimeout(() => {
+          notification.classList.remove('show');
+        }, 3000);
+      }
+      
+      // Verificar URL para código de convite
+      function checkUrlForInviteCode() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const inviteCode = urlParams.get('invite');
+        
+        if (inviteCode) {
+          loginInvite.value = inviteCode;
+          showNotification('Convite Recebido', 'Você recebeu um convite para conversar. Faça login para continuar.');
+        }
+      }
+      
+      // Verificar código de convite na URL quando a página carregar
+      checkUrlForInviteCode();
+    });
   </script>
 </body>
 </html>
