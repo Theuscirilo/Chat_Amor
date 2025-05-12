@@ -295,6 +295,12 @@
             </button>
           </div>
           <p class="auth-footer">Compartilhe este código com a pessoa que deseja conversar</p>
+          
+          <div style="margin-top: 15px; text-align: center;">
+            <button type="button" id="anonymous-login" style="background: none; border: none; color: var(--primary); text-decoration: underline; cursor: pointer; font-size: 0.85rem;">
+              Entrar sem conta
+            </button>
+          </div>
         </div>
       </form>
     </div>
@@ -389,81 +395,177 @@
       
       // Processamento de login
       loginBtn.addEventListener('click', function() {
-        const username = loginUsername.value.trim();
-        const password = loginPassword.value.trim();
-        const inviteCode = loginInvite.value.trim();
+        try {
+          const username = loginUsername.value.trim();
+          const password = loginPassword.value.trim();
+          const inviteCode = loginInvite.value.trim();
+          
+          // Validação mais completa
+          if (!username) {
+            showNotification('Erro', 'Por favor, digite seu nome de usuário', true);
+            loginUsername.focus();
+            return;
+          }
+          
+          if (username.length < 3) {
+            showNotification('Erro', 'Nome de usuário deve ter pelo menos 3 caracteres', true);
+            loginUsername.focus();
+            return;
+          }
+          
+          if (!password) {
+            showNotification('Erro', 'Por favor, digite sua senha', true);
+            loginPassword.focus();
+            return;
+          }
+          
+          if (password.length < 6) {
+            showNotification('Erro', 'A senha deve ter pelo menos 6 caracteres', true);
+            loginPassword.focus();
+            return;
+          }
+          
+          // Mostrar estado de carregamento
+          loginBtn.disabled = true;
+          loginBtn.innerHTML = '<div class="loading-spinner"></div> Conectando...';
+          
+          // Criar email a partir do nome de usuário para autenticação Firebase
+          const email = `${username.replace(/\s+/g, '').toLowerCase()}@chatdeamor.app`;
         
-        // Validação simples
-        if (!username || !password) {
-          showNotification('Erro', 'Por favor, preencha seu nome de usuário e senha', true);
-          return;
+          // Sempre tentar criar usuário primeiro, e depois fazer login
+          auth.createUserWithEmailAndPassword(email, password)
+            .then((userCredential) => {
+              // Novo usuário criado com sucesso
+              const user = userCredential.user;
+              // Salvar dados do usuário
+              saveUserData(user.uid, username, inviteCode);
+            })
+            .catch((error) => {
+              // Se o usuário já existe, tentar fazer login
+              if (error.code === 'auth/email-already-in-use') {
+                auth.signInWithEmailAndPassword(email, password)
+                  .then((userCredential) => {
+                    // Login bem sucedido
+                    const user = userCredential.user;
+                    // Salvar dados do usuário
+                    saveUserData(user.uid, username, inviteCode);
+                  })
+                  .catch((loginError) => {
+                    // Mostrar erro de login apropriado
+                    if (loginError.code === 'auth/wrong-password') {
+                      showNotification('Erro', 'Senha incorreta para este usuário', true);
+                    } else if (loginError.code === 'auth/too-many-requests') {
+                      showNotification('Erro', 'Muitas tentativas de login. Tente novamente mais tarde.', true);
+                    } else if (loginError.code === 'auth/network-request-failed') {
+                      showNotification('Erro', 'Problema de conexão com a internet. Verifique sua conexão.', true);
+                    } else {
+                      showNotification('Erro', 'Falha ao entrar: ' + loginError.message, true);
+                    }
+                    
+                    // Resetar botão
+                    loginBtn.disabled = false;
+                    loginBtn.innerHTML = 'Entrar no Chat';
+                  });
+              } else if (error.code === 'auth/weak-password') {
+                showNotification('Erro', 'A senha é muito fraca. Use pelo menos 6 caracteres.', true);
+                loginBtn.disabled = false;
+                loginBtn.innerHTML = 'Entrar no Chat';
+              } else if (error.code === 'auth/network-request-failed') {
+                showNotification('Erro', 'Problema de conexão com a internet. Verifique sua conexão.', true);
+                loginBtn.disabled = false;
+                loginBtn.innerHTML = 'Entrar no Chat';
+              } else {
+                showNotification('Erro', 'Falha ao criar conta: ' + error.message, true);
+                loginBtn.disabled = false;
+                loginBtn.innerHTML = 'Entrar no Chat';
+              }
+            });
+        } catch (error) {
+          console.error('Erro no processo de login:', error);
+          showNotification('Erro', 'Ocorreu um erro inesperado. Tente novamente.', true);
+          loginBtn.disabled = false;
+          loginBtn.innerHTML = 'Entrar no Chat';
         }
-        
-        // Criar email a partir do nome de usuário para autenticação Firebase
-        const email = `${username.replace(/\s+/g, '').toLowerCase()}@chatdeamor.app`;
-        
-        // Fazer login ou criar usuário se não existir
-        auth.signInWithEmailAndPassword(email, password)
-          .then((userCredential) => {
-            // Login bem sucedido
-            const user = userCredential.user;
-            // Salvar dados do usuário
-            saveUserData(user.uid, username, inviteCode);
-          })
-          .catch((error) => {
-            if (error.code === 'auth/user-not-found') {
-              // Criar novo usuário
-              auth.createUserWithEmailAndPassword(email, password)
-                .then((userCredential) => {
-                  const user = userCredential.user;
-                  // Salvar dados do usuário
-                  saveUserData(user.uid, username, inviteCode);
-                })
-                .catch((error) => {
-                  showNotification('Erro', error.message, true);
-                });
-            } else {
-              showNotification('Erro', error.message, true);
-            }
-          });
       });
       
       // Salvar dados do usuário no Firestore
       function saveUserData(userId, username, inviteCode) {
-        // Salvar no localStorage para acesso rápido
-        localStorage.setItem('userName', username);
-        localStorage.setItem('userId', userId);
-        
-        // Dados do usuário
-        const userData = {
-          username: username,
-          lastActive: firebase.firestore.FieldValue.serverTimestamp(),
-          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-        };
-        
-        // Se fornecido um código de convite, salvar também
-        if (inviteCode) {
-          localStorage.setItem('inviteCode', inviteCode);
-          userData.partnerInviteCode = inviteCode;
+        try {
+          // Mostrar notificação de progresso
+          showNotification('Processando', 'Salvando dados do usuário...', false);
+          
+          // Salvar no localStorage para acesso rápido
+          localStorage.setItem('userName', username);
+          localStorage.setItem('userId', userId);
+          
+          // Dados do usuário
+          const userData = {
+            username: username,
+            online: true,
+            lastActive: firebase.firestore.FieldValue.serverTimestamp(),
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+          };
+          
+          // Se fornecido um código de convite, salvar também
+          if (inviteCode) {
+            localStorage.setItem('inviteCode', inviteCode);
+            userData.partnerInviteCode = inviteCode;
+          }
+          
+          // Se não tiver um código próprio, gerar um
+          if (!inviteLink.value) {
+            userData.inviteCode = generateInviteCode();
+            inviteLink.value = userData.inviteCode;
+          } else {
+            userData.inviteCode = inviteLink.value;
+          }
+          
+          // Salvar meu código de convite no localStorage
+          if (userData.inviteCode) {
+            localStorage.setItem('myInviteCode', userData.inviteCode);
+          }
+          
+          // Salvar no Firestore
+          db.collection('users').doc(userId).set(userData, { merge: true })
+            .then(() => {
+              showNotification('Sucesso', 'Login realizado com sucesso!', false);
+              
+              // Pequeno atraso antes de redirecionar
+              setTimeout(() => {
+                // Redirecionar para a página de chat
+                window.location.href = 'chat.html';
+              }, 500);
+            })
+            .catch((error) => {
+              console.error('Erro ao salvar dados:', error);
+              
+              // Mostrar erro
+              showNotification('Erro', 'Erro ao salvar dados: ' + error.message, true);
+              
+              // Mesmo com erro no Firestore, tentar redirecionar para o chat
+              // já que temos dados locais suficientes
+              setTimeout(() => {
+                window.location.href = 'chat.html';
+              }, 2000);
+              
+              // Resetar botão
+              loginBtn.disabled = false;
+              loginBtn.innerHTML = 'Entrar no Chat';
+            });
+        } catch (error) {
+          console.error('Erro em saveUserData:', error);
+          showNotification('Erro', 'Falha ao processar dados: ' + error.message, true);
+          
+          // Resetar botão
+          loginBtn.disabled = false;
+          loginBtn.innerHTML = 'Entrar no Chat';
         }
-        
-        // Se não tiver um código próprio, gerar um
-        if (!inviteLink.value) {
-          userData.inviteCode = generateInviteCode();
-          inviteLink.value = userData.inviteCode;
-        } else {
-          userData.inviteCode = inviteLink.value;
-        }
-        
-        // Salvar no Firestore
-        db.collection('users').doc(userId).set(userData, { merge: true })
-          .then(() => {
-            // Redirecionar para a página de chat
-            window.location.href = 'chat.html';
-          })
-          .catch((error) => {
-            showNotification('Erro', 'Erro ao salvar dados: ' + error.message, true);
-          });
+      }
+      
+      // Função para gerar código de convite
+      function generateInviteCode() {
+        const code = Math.random().toString(36).substring(2, 10).toUpperCase();
+        return code;
       }
       
       // Função para mostrar notificações
@@ -498,6 +600,73 @@
           showNotification('Convite Recebido', 'Você recebeu um convite para conversar. Faça login para continuar.');
         }
       }
+      
+      // Login anônimo
+      document.getElementById('anonymous-login').addEventListener('click', function() {
+        try {
+          // Mostrar loading
+          this.disabled = true;
+          this.innerHTML = '<div class="loading-spinner"></div> Conectando...';
+          
+          // Mostrar notificação
+          showNotification('Conectando', 'Realizando login anônimo...', false);
+          
+          // Fazer login anônimo
+          auth.signInAnonymously()
+            .then((userCredential) => {
+              // Login anônimo bem sucedido
+              const user = userCredential.user;
+              
+              // Gerar nome temporário
+              const tempName = "Usuário" + Math.floor(Math.random() * 10000);
+              
+              // Pegar código de convite, se houver
+              const inviteCode = loginInvite.value.trim();
+              
+              // Salvar dados
+              saveUserData(user.uid, tempName, inviteCode);
+            })
+            .catch((error) => {
+              console.error('Erro no login anônimo:', error);
+              showNotification('Erro', 'Falha no login anônimo: ' + error.message, true);
+              
+              // Resetar botão
+              this.disabled = false;
+              this.innerHTML = 'Entrar sem conta';
+            });
+        } catch (error) {
+          console.error('Erro no login anônimo:', error);
+          showNotification('Erro', 'Ocorreu um erro inesperado. Tente novamente.', true);
+          
+          // Resetar botão
+          this.disabled = false;
+          this.innerHTML = 'Entrar sem conta';
+        }
+      });
+      
+      // Verificar se já está logado
+      auth.onAuthStateChanged(function(user) {
+        if (user) {
+          // Verificar URL para saber se o usuário está tentando usar um novo convite
+          const urlParams = new URLSearchParams(window.location.search);
+          const newInvite = urlParams.get('invite');
+          
+          // Se não tiver novo convite, redirecionar para o chat
+          if (!newInvite) {
+            // Já está logado, mostrar notificação e redirecionar
+            showNotification('Já conectado', 'Redirecionando para o chat...', false);
+            
+            // Pequeno atraso para mostrar a notificação
+            setTimeout(() => {
+              window.location.href = 'chat.html';
+            }, 1000);
+          } else {
+            // Se tiver novo convite, atualizar e salvar
+            loginInvite.value = newInvite;
+            showNotification('Novo convite', 'Você pode usar este novo convite. Clique em Entrar.', false);
+          }
+        }
+      });
       
       // Verificar código de convite na URL quando a página carregar
       checkUrlForInviteCode();
