@@ -506,10 +506,14 @@
             updatedAt: firebase.firestore.FieldValue.serverTimestamp()
           };
           
+          // Verificar o código recebido
+          console.log("Código de convite informado:", inviteCode);
+          
           // Se fornecido um código de convite, salvar também
-          if (inviteCode) {
-            localStorage.setItem('inviteCode', inviteCode);
-            userData.partnerInviteCode = inviteCode;
+          if (inviteCode && inviteCode.trim().length > 0) {
+            console.log("Salvando código de convite do parceiro:", inviteCode);
+            localStorage.setItem('inviteCode', inviteCode.trim());
+            userData.partnerInviteCode = inviteCode.trim();
           }
           
           // Se não tiver um código próprio, gerar um
@@ -519,6 +523,8 @@
           } else {
             userData.inviteCode = inviteLink.value;
           }
+          
+          console.log("Meu código de convite:", userData.inviteCode);
           
           // Salvar meu código de convite no localStorage
           if (userData.inviteCode) {

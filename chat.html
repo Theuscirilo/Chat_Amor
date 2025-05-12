@@ -591,12 +591,42 @@
   </div>
 
   <script>
+    // Configuração do Firebase
+    const firebaseConfig = {
+      apiKey: "AIzaSyC6LakJpl51gTNIO9XcZ4gEE55k7QrLeeI",
+      authDomain: "login-49652.firebaseapp.com",
+      projectId: "login-49652",
+      storageBucket: "login-49652.firebasestorage.app",
+      messagingSenderId: "621728818359",
+      appId: "1:621728818359:web:25a9f18e9558551f16d932",
+      measurementId: "G-MK12B3C8NQ"
+    };
+
+    // Inicialização do Firebase
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+    
     document.addEventListener('DOMContentLoaded', function() {
       // Verificar se o usuário está logado
-      const userName = localStorage.getItem('userName');
-      if (!userName) {
+      let currentUser = null;
+      let currentUserId = localStorage.getItem('userId');
+      let userName = localStorage.getItem('userName');
+      let partnerId = null;
+      let chatId = null;
+      let partnerName = null;
+      let unsubscribeMessages = null;
+      let unsubscribePartnerStatus = null;
+      
+      // Mostrar mensagem enquanto carrega
+      showNotification('Conectando', 'Autenticando no servidor...', false);
+      
+      if (!currentUserId || !userName) {
         // Se não estiver logado, redirecionar para a página de login
-        window.location.href = 'index.html';
+        showNotification('Redirecionando', 'Você precisa fazer login primeiro', true);
+        setTimeout(() => {
+          window.location.href = 'index.html';
+        }, 1500);
         return;
       }
 
@@ -617,37 +647,486 @@
       const onlineStatus = document.getElementById('online-status');
       
       // Dados do chat
-      let messages = [];
-      const myInviteCode = localStorage.getItem('myInviteCode') || 'SEM_CODIGO';
       const inviteCode = localStorage.getItem('inviteCode');
+      let userInviteCode = null;
+      
+      // Verificar autenticação
+      auth.onAuthStateChanged(async function(user) {
+        try {
+          if (user) {
+            currentUser = user;
+            currentUserId = user.uid;
+            
+            try {
+              // Buscar dados do usuário
+              const userDoc = await db.collection('users').doc(currentUserId).get();
+              if (userDoc.exists) {
+                const userData = userDoc.data();
+                userInviteCode = userData.inviteCode;
+                
+                // Se temos dados salvos em localStorage mas não no Firestore, atualizar Firestore
+                if (!userInviteCode && localStorage.getItem('myInviteCode')) {
+                  userInviteCode = localStorage.getItem('myInviteCode');
+                  await db.collection('users').doc(currentUserId).update({
+                    inviteCode: userInviteCode
+                  });
+                }
+                
+                // Se não temos convite nem no Firestore nem no localStorage, gerar um novo
+                if (!userInviteCode) {
+                  userInviteCode = generateInviteCode();
+                  await db.collection('users').doc(currentUserId).update({
+                    inviteCode: userInviteCode
+                  });
+                }
+              } else {
+                // Criar documento de usuário se não existir
+                userInviteCode = localStorage.getItem('myInviteCode') || generateInviteCode();
+                await db.collection('users').doc(currentUserId).set({
+                  username: userName,
+                  inviteCode: userInviteCode,
+                  online: true,
+                  lastActive: firebase.firestore.FieldValue.serverTimestamp(),
+                  createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+              }
+              
+              // Atualizar status online
+              updateOnlineStatus(true);
+              
+              // Configurar listener para quando o app é fechado
+              window.addEventListener('beforeunload', function() {
+                updateOnlineStatus(false);
+              });
+              
+              // Iniciar o chat
+              initChat();
+            } catch (error) {
+              console.error('Erro ao buscar dados do usuário:', error);
+              
+              // Mesmo com erro, tentar iniciar o chat com dados do localStorage
+              showNotification('Aviso', 'Usando dados locais, a sincronização pode ser limitada', true);
+              userInviteCode = localStorage.getItem('myInviteCode') || generateInviteCode();
+              
+              // Iniciar o chat mesmo assim
+              setTimeout(() => {
+                initChat();
+              }, 1000);
+            }
+          } else {
+            // Se não temos usuário autenticado, tentar login anônimo
+            try {
+              showNotification('Conectando', 'Tentando login anônimo...', false);
+              await auth.signInAnonymously();
+              // O listener onAuthStateChanged será chamado novamente após o login anônimo
+            } catch (anonError) {
+              console.error('Erro ao fazer login anônimo:', anonError);
+              showNotification('Erro', 'Falha ao autenticar. Redirecionando...', true);
+              setTimeout(() => {
+                window.location.href = 'index.html';
+              }, 2000);
+            }
+          }
+        } catch (e) {
+          console.error('Erro crítico na autenticação:', e);
+          showNotification('Erro', 'Falha ao acessar o chat. Redirecionando...', true);
+          setTimeout(() => {
+            window.location.href = 'index.html';
+          }, 2500);
+        }
+      });
+      
+      // Atualizar status online do usuário
+      function updateOnlineStatus(isOnline) {
+        if (currentUserId) {
+          // Verificar se o documento do usuário existe primeiro
+          db.collection('users').doc(currentUserId).get()
+            .then(doc => {
+              if (doc.exists) {
+                // Documento existe, atualizar
+                return db.collection('users').doc(currentUserId).update({
+                  online: isOnline,
+                  lastActive: firebase.firestore.FieldValue.serverTimestamp()
+                });
+              } else {
+                // Documento não existe, criar
+                return db.collection('users').doc(currentUserId).set({
+                  username: userName,
+                  online: isOnline,
+                  inviteCode: localStorage.getItem('myInviteCode') || generateInviteCode(),
+                  lastActive: firebase.firestore.FieldValue.serverTimestamp(),
+                  createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+              }
+            })
+            .catch(err => {
+              console.error('Erro ao atualizar status online:', err);
+              // Tente criar o documento se houver erro
+              if (err.code === 'permission-denied' || err.code === 'not-found') {
+                db.collection('users').doc(currentUserId).set({
+                  username: userName,
+                  online: isOnline,
+                  inviteCode: localStorage.getItem('myInviteCode') || generateInviteCode(),
+                  lastActive: firebase.firestore.FieldValue.serverTimestamp(),
+                  createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                }).catch(e => console.error('Erro ao criar documento de usuário:', e));
+              }
+            });
+        }
+      }
+      
+      // Gerar código de convite
+      function generateInviteCode() {
+        const code = Math.random().toString(36).substring(2, 10).toUpperCase();
+        localStorage.setItem('myInviteCode', code);
+        return code;
+      }
       
       // Inicialização do chat
-      function initChat() {
-        // Simular uma conexão
-        setTimeout(() => {
-          loadingOverlay.style.display = 'none';
-          
-          // Se tiver um código de convite, mostrar o nome do destinatário como "Amor"
+      async function initChat() {
+        try {
+          // Se tiver um código de convite, buscar o parceiro
           if (inviteCode) {
-            recipientName.textContent = 'Amor';
-            recipientInitial.textContent = 'A';
-            typingStatus.textContent = 'Online';
-            onlineStatus.classList.remove('offline');
+            // Buscar usuário dono do código
+            const partnerQuery = await db.collection('users')
+              .where('inviteCode', '==', inviteCode)
+              .limit(1)
+              .get();
+            
+            console.log("Consultando código de convite:", inviteCode);
+            console.log("Documentos encontrados:", partnerQuery.size);
+            
+            if (partnerQuery.size > 0) {
+              const partnerDoc = partnerQuery.docs[0];
+              partnerId = partnerDoc.id;
+              const partnerData = partnerDoc.data();
+              partnerName = partnerData.username || 'Amor';
+              
+              console.log("Parceiro encontrado:", partnerName, "ID:", partnerId);
+              
+              // Configurar chat com o parceiro
+              setupPartnerChat();
+            } else {
+              console.error("Código de convite não encontrado:", inviteCode);
+              showNotification('Erro', 'Código de convite inválido', true);
+              recipientName.textContent = 'Código inválido';
+              recipientInitial.textContent = '?';
+              typingStatus.textContent = 'Verifique o código de convite';
+            }
           } else {
             recipientName.textContent = 'Aguardando conexão...';
             recipientInitial.textContent = '?';
             typingStatus.textContent = 'Compartilhe seu código de convite para conectar';
           }
           
+          // Esconder overlay de loading
+          loadingOverlay.style.display = 'none';
+          
           // Mostrar mensagem de boas-vindas
-          addSystemMessage('Bem-vindo ao Chat de Amor! Compartilhe seu código de convite para começar a conversar.');
-        }, 1500);
+          addSystemMessage('Bem-vindo ao Chat de Amor! ' + 
+            (inviteCode ? 'Você está conectado.' : 'Compartilhe seu código de convite para começar a conversar.'));
+          
+        } catch (error) {
+          console.error('Erro ao inicializar chat:', error);
+          showNotification('Erro', 'Falha ao inicializar chat: ' + error.message, true);
+        }
         
         // Ajustar altura do textarea ao digitar
         messageInput.addEventListener('input', function() {
           this.style.height = 'auto';
           this.style.height = (this.scrollHeight) + 'px';
+          
+          // Informar ao parceiro que está digitando
+          if (partnerId) {
+            db.collection('users').doc(currentUserId).update({
+              typing: true,
+              typingAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            
+            // Limpar status de digitação após um tempo
+            clearTimeout(this.typingTimeout);
+            this.typingTimeout = setTimeout(() => {
+              db.collection('users').doc(currentUserId).update({
+                typing: false
+              });
+            }, 1500);
+          }
         });
+      }
+      
+      // Configurar chat com parceiro
+      function setupPartnerChat() {
+        // Atualizar UI com informações do parceiro
+        recipientName.textContent = partnerName;
+        recipientInitial.textContent = partnerName.charAt(0).toUpperCase();
+        
+        // Criar ou obter ID do chat entre os usuários
+        chatId = [currentUserId, partnerId].sort().join('_');
+        
+        // Buscar histórico de mensagens
+        loadChatHistory();
+        
+        // Escutar por novas mensagens
+        listenForNewMessages();
+        
+        // Escutar status do parceiro (online, digitando, etc)
+        listenForPartnerStatus();
+        
+        // Marcar usuário como conectado ao parceiro
+        db.collection('users').doc(currentUserId).update({
+          partnerInviteCode: inviteCode,
+          partnerId: partnerId,
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+      }
+      
+      // Carregar histórico de mensagens
+      async function loadChatHistory() {
+        try {
+          const messagesQuery = await db.collection('chats')
+            .doc(chatId)
+            .collection('messages')
+            .orderBy('timestamp', 'asc')
+            .limit(50)
+            .get();
+          
+          if (!messagesQuery.empty) {
+            // Limpar mensagens existentes
+            chatMessages.innerHTML = '';
+            
+            // Adicionar data do chat
+            const firstMsg = messagesQuery.docs[0].data();
+            const firstDate = firstMsg.timestamp.toDate();
+            addDateDivider(firstDate);
+            
+            let lastDate = firstDate;
+            
+            // Adicionar mensagens
+            messagesQuery.docs.forEach(doc => {
+              const msgData = doc.data();
+              const msgDate = msgData.timestamp.toDate();
+              
+              // Se for um novo dia, adicionar separador de data
+              if (!isSameDay(lastDate, msgDate)) {
+                addDateDivider(msgDate);
+                lastDate = msgDate;
+              }
+              
+              // Adicionar mensagem
+              const isSent = msgData.senderId === currentUserId;
+              renderMessage(msgData, isSent, doc.id);
+            });
+            
+            // Rolar para o fim
+            scrollToBottom();
+          } else {
+            // Sem histórico, adicionar mensagem inicial
+            const today = new Date();
+            addDateDivider(today);
+          }
+        } catch (error) {
+          console.error('Erro ao carregar histórico:', error);
+          showNotification('Erro', 'Falha ao carregar mensagens: ' + error.message, true);
+        }
+      }
+      
+      // Escutar por novas mensagens
+      function listenForNewMessages() {
+        if (unsubscribeMessages) {
+          unsubscribeMessages();
+        }
+        
+        unsubscribeMessages = db.collection('chats')
+          .doc(chatId)
+          .collection('messages')
+          .orderBy('timestamp', 'desc')
+          .limit(1)
+          .onSnapshot(snapshot => {
+            snapshot.docChanges().forEach(change => {
+              if (change.type === 'added') {
+                const msgData = change.doc.data();
+                
+                // Verificar se não é uma mensagem antiga
+                const messageTime = msgData.timestamp.toDate();
+                const now = new Date();
+                const diffInSeconds = (now - messageTime) / 1000;
+                
+                // Apenas processar mensagens dos últimos 60 segundos
+                if (diffInSeconds < 60) {
+                  const isSent = msgData.senderId === currentUserId;
+                  
+                  // Se não for uma mensagem enviada por mim (se for recebida)
+                  if (!isSent) {
+                    // Verificar se precisa adicionar um separador de data
+                    const lastDateDivider = chatMessages.querySelector('.date-divider:last-of-type');
+                    if (!lastDateDivider || !isSameDay(new Date(lastDateDivider.dataset.date), messageTime)) {
+                      addDateDivider(messageTime);
+                    }
+                    
+                    // Renderizar mensagem
+                    renderMessage(msgData, isSent, change.doc.id);
+                    
+                    // Tocar som de notificação
+                    playMessageSound();
+                    
+                    // Marcar como lida
+                    markMessageAsRead(change.doc.id);
+                    
+                    // Rolar para o fim
+                    scrollToBottom();
+                  }
+                }
+              }
+            });
+          }, error => {
+            console.error('Erro ao escutar mensagens:', error);
+          });
+      }
+      
+      // Escutar status do parceiro
+      function listenForPartnerStatus() {
+        if (unsubscribePartnerStatus) {
+          unsubscribePartnerStatus();
+        }
+        
+        unsubscribePartnerStatus = db.collection('users')
+          .doc(partnerId)
+          .onSnapshot(doc => {
+            if (doc.exists) {
+              const partnerData = doc.data();
+              
+              // Atualizar status online
+              if (partnerData.online) {
+                onlineStatus.classList.remove('offline');
+                typingStatus.textContent = 'Online';
+              } else {
+                onlineStatus.classList.add('offline');
+                
+                // Mostrar última vez online
+                if (partnerData.lastActive) {
+                  const lastActive = partnerData.lastActive.toDate();
+                  const timeAgo = getTimeAgo(lastActive);
+                  typingStatus.textContent = `Visto por último ${timeAgo}`;
+                } else {
+                  typingStatus.textContent = 'Offline';
+                }
+              }
+              
+              // Atualizar status de digitação
+              if (partnerData.typing) {
+                typingStatus.textContent = 'Digitando...';
+              }
+            }
+          }, error => {
+            console.error('Erro ao escutar status do parceiro:', error);
+          });
+      }
+      
+      // Adicionar separador de data
+      function addDateDivider(date) {
+        const isToday = isSameDay(date, new Date());
+        const isYesterday = isSameDay(date, new Date(Date.now() - 86400000));
+        
+        let dateText = '';
+        if (isToday) {
+          dateText = 'Hoje';
+        } else if (isYesterday) {
+          dateText = 'Ontem';
+        } else {
+          dateText = date.toLocaleDateString('pt-BR', { 
+            day: 'numeric', 
+            month: 'long',
+            year: 'numeric'
+          });
+        }
+        
+        const divider = document.createElement('div');
+        divider.classList.add('date-divider');
+        divider.dataset.date = date.toISOString();
+        divider.innerHTML = `<span>${dateText}</span>`;
+        chatMessages.appendChild(divider);
+      }
+      
+      // Verificar se duas datas são do mesmo dia
+      function isSameDay(date1, date2) {
+        return date1.getFullYear() === date2.getFullYear() &&
+               date1.getMonth() === date2.getMonth() &&
+               date1.getDate() === date2.getDate();
+      }
+      
+      // Obter tempo relativo (ex: "há 5 minutos")
+      function getTimeAgo(date) {
+        const now = new Date();
+        const diffInSeconds = Math.floor((now - date) / 1000);
+        
+        if (diffInSeconds < 60) {
+          return 'agora mesmo';
+        } else if (diffInSeconds < 3600) {
+          const minutes = Math.floor(diffInSeconds / 60);
+          return `há ${minutes} ${minutes === 1 ? 'minuto' : 'minutos'}`;
+        } else if (diffInSeconds < 86400) {
+          const hours = Math.floor(diffInSeconds / 3600);
+          return `há ${hours} ${hours === 1 ? 'hora' : 'horas'}`;
+        } else {
+          return date.toLocaleDateString('pt-BR', { 
+            day: 'numeric', 
+            month: 'long', 
+            hour: '2-digit', 
+            minute: '2-digit'
+          });
+        }
+      }
+      
+      // Tocar som de notificação
+      function playMessageSound() {
+        // Criar elemento de áudio
+        const audio = new Audio('https://cdn.pixabay.com/download/audio/2021/08/04/audio_0625c1539c.mp3?filename=insight-578.mp3');
+        audio.volume = 0.3;
+        audio.play().catch(e => console.log('Erro ao tocar som:', e));
+      }
+      
+      // Marcar mensagem como lida
+      function markMessageAsRead(messageId) {
+        db.collection('chats')
+          .doc(chatId)
+          .collection('messages')
+          .doc(messageId)
+          .update({
+            read: true,
+            readAt: firebase.firestore.FieldValue.serverTimestamp()
+          }).catch(error => console.error('Erro ao marcar mensagem como lida:', error));
+      }
+      
+      // Renderizar uma mensagem no chat
+      function renderMessage(msgData, isSent, messageId) {
+        const messageTime = msgData.timestamp.toDate();
+        const timeString = messageTime.getHours().toString().padStart(2, '0') + ':' + 
+                        messageTime.getMinutes().toString().padStart(2, '0');
+        
+        const messageDiv = document.createElement('div');
+        messageDiv.classList.add('message', isSent ? 'sent' : 'received');
+        messageDiv.setAttribute('data-id', messageId);
+        
+        let statusIcon = '';
+        if (isSent) {
+          statusIcon = `
+            <span class="message-status">
+              <i class="fas ${msgData.read ? 'fa-check-double' : 'fa-check'}"></i>
+            </span>
+          `;
+        }
+        
+        messageDiv.innerHTML = `
+          <div class="message-bubble">
+            <div class="message-text">${msgData.text}</div>
+            <div class="message-meta">
+              ${timeString}
+              ${statusIcon}
+            </div>
+          </div>
+        `;
+        
+        chatMessages.appendChild(messageDiv);
       }
 
       // Adicionar uma mensagem do sistema
@@ -659,121 +1138,61 @@
         scrollToBottom();
       }
       
-      // Adicionar uma mensagem enviada
-      function addSentMessage(text) {
-        const now = new Date();
-        const timeString = now.getHours().toString().padStart(2, '0') + ':' + 
-                         now.getMinutes().toString().padStart(2, '0');
-        
-        const messageDiv = document.createElement('div');
-        messageDiv.classList.add('message', 'sent');
-        messageDiv.innerHTML = `
-          <div class="message-bubble">
-            <div class="message-text">${text}</div>
-            <div class="message-meta">
-              ${timeString}
-              <span class="message-status">
-                <i class="fas fa-check"></i>
-              </span>
-            </div>
-          </div>
-        `;
-        
-        chatMessages.appendChild(messageDiv);
-        scrollToBottom();
-        
-        // Salvar a mensagem em memória
-        messages.push({
-          text,
-          sent: true,
-          time: now
-        });
-        
-        // Simular recebimento da mensagem
-        if (inviteCode) {
-          setTimeout(() => {
-            // Atualizar status de lido
-            const statusIcon = messageDiv.querySelector('.message-status i');
-            statusIcon.className = 'fas fa-check-double';
-            
-            // Simular resposta após algum tempo
-            simulateResponse();
-          }, 1000);
-        }
-      }
-      
-      // Adicionar uma mensagem recebida
-      function addReceivedMessage(text) {
-        const now = new Date();
-        const timeString = now.getHours().toString().padStart(2, '0') + ':' + 
-                         now.getMinutes().toString().padStart(2, '0');
-        
-        const messageDiv = document.createElement('div');
-        messageDiv.classList.add('message', 'received');
-        messageDiv.innerHTML = `
-          <div class="message-bubble">
-            <div class="message-text">${text}</div>
-            <div class="message-meta">
-              ${timeString}
-            </div>
-          </div>
-        `;
-        
-        chatMessages.appendChild(messageDiv);
-        scrollToBottom();
-        
-        // Salvar a mensagem em memória
-        messages.push({
-          text,
-          sent: false,
-          time: now
-        });
-      }
-      
-      // Simular uma resposta do destinatário
-      function simulateResponse() {
-        // Lista de possíveis respostas
-        const responses = [
-          "Oi amor, tudo bem?",
-          "Estou com saudades de você!",
-          "Te amo muito! ❤️",
-          "Que bom falar com você novamente",
-          "Quando vamos nos ver?",
-          "Estou pensando em você o dia todo",
-          "Me conta como foi seu dia",
-          "Você é incrível, sabia?",
-          "Podemos nos encontrar mais tarde?",
-          "Já te falei hoje o quanto você é especial?",
-          "Meu coração acelera quando você me manda mensagem"
-        ];
-        
-        // Escolher uma resposta aleatória
-        const randomResponse = responses[Math.floor(Math.random() * responses.length)];
-        
-        // Mostrar "digitando..." por alguns segundos
-        typingStatus.textContent = 'Digitando...';
-        
-        setTimeout(() => {
-          // Adicionar a mensagem recebida
-          addReceivedMessage(randomResponse);
-          
-          // Voltar ao status "online"
-          typingStatus.textContent = 'Online';
-        }, 1500);
-      }
-      
       // Rolar para o fim da conversa
       function scrollToBottom() {
         chatMessages.scrollTop = chatMessages.scrollHeight;
       }
       
       // Enviar mensagem
-      function sendMessage() {
+      async function sendMessage() {
         const text = messageInput.value.trim();
-        if (text) {
-          addSentMessage(text);
+        if (!text) return;
+        
+        try {
+          // Verificar se temos ID de chat e parceiro
+          if (!chatId || !partnerId) {
+            showNotification('Erro', 'Você precisa estar conectado a um contato para enviar mensagens', true);
+            return;
+          }
+          
+          // Dados da mensagem
+          const messageData = {
+            text: text,
+            senderId: currentUserId,
+            receiverId: partnerId,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+            read: false
+          };
+          
+          // Adicionar ao Firestore
+          const newMessageRef = await db.collection('chats')
+            .doc(chatId)
+            .collection('messages')
+            .add(messageData);
+          
+          // Atualizar último acesso ao chat
+          db.collection('chats').doc(chatId).set({
+            lastMessage: text,
+            lastMessageAt: firebase.firestore.FieldValue.serverTimestamp(),
+            participants: [currentUserId, partnerId]
+          }, { merge: true });
+          
+          // Atualizar interface
+          messageData.timestamp = new Date(); // Timestamp local temporário
+          renderMessage(messageData, true, newMessageRef.id);
+          scrollToBottom();
+          
+          // Limpar input
           messageInput.value = '';
           messageInput.style.height = 'auto';
+          
+          // Limpar status de digitação
+          db.collection('users').doc(currentUserId).update({
+            typing: false
+          });
+        } catch (error) {
+          console.error('Erro ao enviar mensagem:', error);
+          showNotification('Erro', 'Falha ao enviar mensagem: ' + error.message, true);
         }
       }
       
@@ -825,9 +1244,12 @@
       copyInviteMenu.addEventListener('click', function() {
         dropdownMenu.classList.remove('show');
         
+        // Obter código de convite
+        const inviteCodeToCopy = userInviteCode || 'Código não disponível';
+        
         // Criar um elemento de texto temporário
         const tempInput = document.createElement('input');
-        tempInput.value = myInviteCode;
+        tempInput.value = inviteCodeToCopy;
         document.body.appendChild(tempInput);
         tempInput.select();
         document.execCommand('copy');
@@ -838,17 +1260,30 @@
       
       // Logout
       logoutMenu.addEventListener('click', function() {
-        localStorage.removeItem('inviteCode');
-        window.location.href = 'index.html';
+        // Remover listeners
+        if (unsubscribeMessages) unsubscribeMessages();
+        if (unsubscribePartnerStatus) unsubscribePartnerStatus();
+        
+        // Atualizar status offline
+        updateOnlineStatus(false);
+        
+        // Fazer logout no Firebase
+        auth.signOut().then(() => {
+          localStorage.removeItem('inviteCode');
+          localStorage.removeItem('userName');
+          localStorage.removeItem('userId');
+          window.location.href = 'index.html';
+        }).catch(error => {
+          console.error('Erro ao fazer logout:', error);
+          // Em caso de erro, forçar redirecionamento
+          window.location.href = 'index.html';
+        });
       });
       
       // Botão voltar
       backButton.addEventListener('click', function() {
         window.location.href = 'index.html';
       });
-      
-      // Iniciar o chat
-      initChat();
     });
   </script>
 </body>
