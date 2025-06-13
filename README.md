@@ -1,94 +1,130 @@
-# Chat de Amor - README
+# Chat de Amor 💕
 
-Este é um projeto de um aplicativo de chat com foco em conexões amorosas. Ele oferece funcionalidades de login, cadastro com foto de perfil, e um sistema básico para exibir o status da conexão e notificações. O projeto utiliza Firebase para autenticação, armazenamento de dados (Firestore) e armazenamento de arquivos (Storage).
+Um aplicativo de chat em tempo real com conexão via código de convite, desenvolvido com Firebase e JavaScript moderno.
 
-## Funcionalidades
+## 🌐 Demo Online
 
-* **Login:** Permite que usuários existentes façam login com seu email e senha.
-* **Cadastro:** Novos usuários podem se cadastrar fornecendo nome, email, senha e opcionalmente uma foto de perfil.
-* **Upload de Foto de Perfil:** Durante o cadastro, os usuários podem adicionar uma foto de perfil que é armazenada no Firebase Storage.
-* **Status de Conexão:** Exibe visualmente se o usuário está online ou offline, e também indica a conexão com o Firebase.
-* **Notificações Toast:** Um sistema de notificações visuais para informar os usuários sobre o sucesso ou falha de operações como login e cadastro, além de problemas de conexão.
-* **Persistência Offline:** O Firestore está configurado para habilitar a persistência offline, permitindo que o aplicativo funcione de forma mais resiliente em conexões instáveis.
-* **Tratamento de Erros e Reconexão:** Implementa tentativas de reconexão automáticas para operações do Firebase em caso de falha na rede.
+Acesse a versão online do chat: [Chat de Amor](https://theuscirilo.github.io/chat-de-amor)
 
-## Tecnologias Utilizadas
+## ✨ Funcionalidades
 
-* **HTML:** Estrutura da página web.
-* **CSS:** Estilos visuais, incluindo um tema claro e um tema escuro (o tema escuro não está totalmente implementado neste trecho de código, mas as variáveis CSS estão definidas).
-* **JavaScript:** Lógica da aplicação, manipulação do DOM e integração com o Firebase.
-* **Firebase:**
-    * **Firebase Authentication:** Para autenticação de usuários (login e cadastro).
-    * **Firebase Firestore:** Banco de dados NoSQL para armazenar informações dos usuários e futuras mensagens do chat.
-    * **Firebase Storage:** Para armazenar as fotos de perfil dos usuários.
-    * **Firebase SDK (Compatibilidade):** As bibliotecas JavaScript do Firebase para integrar os serviços ao aplicativo web.
-* **Font Awesome:** Para ícones.
-* **Google Fonts (Poppins):** Para a tipografia da página.
+- 🔐 Autenticação segura com email/senha
+- 🔑 Sistema de código de convite único para cada usuário
+- 💬 Chat em tempo real
+- 📱 Interface responsiva e moderna
+- 👁️ Status de visualização das mensagens
+- ⏰ Horário das mensagens
+- 🟢 Indicador de status online
+- 📋 Cópia fácil do código de convite
 
-## Configuração do Firebase
+## 🚀 Tecnologias Utilizadas
 
-Para executar este projeto, você precisará de uma conta no Firebase e um projeto configurado. Siga estes passos:
+- Firebase Authentication
+- Firebase Firestore
+- JavaScript (ES6+)
+- HTML5
+- CSS3
+- Font Awesome Icons
+- Google Fonts
 
-1.  **Crie um Projeto no Firebase:**
-    * Acesse o [Firebase Console](https://console.firebase.google.com/).
-    * Clique em "Adicionar projeto".
-    * Siga as instruções para dar um nome ao seu projeto e configurá-lo.
+## 🛠️ Configuração
 
-2.  **Configure a Autenticação:**
-    * No menu lateral do Firebase Console, vá em "Authentication".
-    * Na aba "Sign-in methods", habilite o método de autenticação por "Email/password".
+1. Clone o repositório:
+```bash
+git clone https://github.com/seu-usuario/chat-de-amor.git
+cd chat-de-amor
+```
 
-3.  **Configure o Firestore:**
-    * No menu lateral, vá em "Firestore Database".
-    * Clique em "Criar banco de dados".
-    * Escolha o modo de início (recomenda-se o modo de teste para desenvolvimento, mas lembre-se de configurar as regras de segurança para produção).
-    * Selecione a localização do seu banco de dados.
+2. Instale as dependências:
+```bash
+npm install
+```
 
-4.  **Configure o Storage:**
-    * No menu lateral, vá em "Storage".
-    * Clique em "Começar".
-    * Leia e entenda as regras de segurança (você precisará ajustá-las para seu aplicativo em produção).
-    * Clique em "Próximo" e selecione a localização do seu bucket.
+3. Configure o Firebase:
+   - Crie um projeto no [Firebase Console](https://console.firebase.google.com)
+   - Ative a autenticação com email/senha
+   - Configure o Firestore Database
+   - Substitua as configurações do Firebase no arquivo `index.html` e `chat.html`
 
-5.  **Obtenha as Chaves de Configuração:**
-    * No seu projeto do Firebase Console, clique no ícone de engrenagem (Configurações do projeto) ao lado de "Visão geral do projeto".
-    * Na aba "Geral", role para baixo até encontrar a seção "Seus aplicativos".
-    * Clique no ícone "</>" (Web) para adicionar um aplicativo web ao seu projeto, se ainda não tiver feito isso.
-    * Siga as instruções e copie o objeto `firebaseConfig` que será fornecido.
+4. Inicie o servidor local:
+```bash
+npm start
+```
 
-6.  **Atualize o Código:**
-    * No arquivo HTML (`index.html` ou o nome do seu arquivo principal), localize a seção de configuração do Firebase (dentro da tag `<script>`).
-    * Substitua os valores de `apiKey`, `authDomain`, `projectId`, `storageBucket`, `messagingSenderId`, `appId` e `measurementId` pelos seus valores obtidos no Firebase Console.
+5. Acesse o chat em `http://localhost:8080`
 
-    ```javascript
-    const firebaseConfig = {
-      apiKey: "SUA_API_KEY",
-      authDomain: "SEU_AUTH_DOMAIN.firebaseapp.com",
-      projectId: "SEU_PROJECT_ID",
-      storageBucket: "SEU_STORAGE_BUCKET.appspot.com",
-      messagingSenderId: "SEU_MESSAGING_SENDER_ID",
-      appId: "SEU_APP_ID",
-      measurementId: "SEU_MEASUREMENT_ID"
-    };
-    ```
+## 📱 Como Usar
 
-## Como Executar
+1. Acesse a página inicial
+2. Digite seu nome para criar uma conta
+3. Copie seu código de convite único
+4. Compartilhe o código com quem você quer conversar
+5. A outra pessoa deve:
+   - Acessar o chat
+   - Criar sua conta
+   - Colar seu código de convite
+   - Clicar em "Conectar"
 
-1.  **Salve o arquivo HTML:** Salve o código HTML em um arquivo com a extensão `.html` (por exemplo, `index.html`).
-2.  **Abra no Navegador:** Abra o arquivo `index.html` no seu navegador web.
+## 🔒 Regras do Firestore
 
-O aplicativo deverá exibir a interface de login e cadastro. Certifique-se de que sua conexão com a internet esteja ativa para que o Firebase possa ser inicializado corretamente.
+```javascript
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /users/{userId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+    match /messages/{messageId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+      allow update: if request.auth != null;
+    }
+  }
+}
+```
 
-## Próximos Passos (Para Continuar o Desenvolvimento)
+## 🎨 Personalização
 
-* **Implementar a Interface do Chat:** Adicionar a estrutura HTML e CSS para exibir a lista de contatos/conversas e a área de mensagens.
-* **Lógica do Chat:** Implementar as funcionalidades para enviar e receber mensagens em tempo real usando o Firebase Firestore.
-* **Listagem de Usuários Online:** Exibir uma lista de usuários online.
-* **Mensagens Privadas:** Permitir que os usuários iniciem conversas privadas.
-* **Estilos do Chat:** Adicionar estilos para as mensagens enviadas e recebidas, timestamps, etc.
-* **Melhorias na Interface:** Tornar a interface responsiva e melhorar a experiência do usuário.
-* **Testes:** Escrever testes para garantir a funcionalidade e a robustez do aplicativo.
-* **Regras de Segurança do Firebase:** Configurar regras de segurança adequadas no Firestore e Storage para proteger os dados dos usuários.
-* **Tema Escuro:** Completar a implementação do tema escuro.
+O chat usa variáveis CSS para fácil personalização:
 
-Este README fornece uma visão geral do código fornecido e os passos iniciais para configurar e executar o projeto. O desenvolvimento de um aplicativo de chat completo requer um conhecimento mais aprofundado das funcionalidades do Firebase e das tecnologias web.
+```css
+:root {
+  --primary: #4834d4;
+  --primary-light: #6f5ff6;
+  --secondary: #ffaac3;
+  --accent: #fd6f96;
+  --bg-color: #f8f9fb;
+  --text-color: #1a1a2e;
+}
+```
+
+## 🤝 Contribuindo
+
+1. Faça um Fork do projeto
+2. Crie uma Branch para sua Feature (`git checkout -b feature/AmazingFeature`)
+3. Faça o Commit das suas mudanças (`git commit -m 'Add some AmazingFeature'`)
+4. Faça o Push para a Branch (`git push origin feature/AmazingFeature`)
+5. Abra um Pull Request
+
+## 📝 Licença
+
+Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para mais detalhes.
+
+## 👥 Autores
+
+- Matheus Cirilo - [@Theuscirilo](https://github.com/Theuscirilo)
+
+## 🙏 Agradecimentos
+
+- Firebase por fornecer uma plataforma incrível
+- Comunidade open source
+- Todos os contribuidores
+
+## 📞 Suporte
+
+Se você encontrar algum problema ou tiver alguma sugestão, por favor abra uma issue no GitHub.
+
+---
+
+Feito com ❤️ por [Matheus](https://github.com/Theuscirilo)
