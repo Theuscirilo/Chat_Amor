@@ -261,6 +261,14 @@
         
         // Focar no input após enviar mensagem
         messageInput.focus();
+        
+        // Scroll para a última mensagem
+        requestAnimationFrame(() => {
+          chatContainer.scrollTo({
+            top: chatContainer.scrollHeight,
+            behavior: 'smooth'
+          });
+        });
       } catch (error) {
         console.error('Erro ao enviar mensagem:', error);
         showNotification('Erro', 'Falha ao enviar mensagem: ' + error.message, true);
@@ -305,9 +313,12 @@
       chatContainer.appendChild(messageElement);
       
       // Scroll suave para a última mensagem
-      setTimeout(() => {
-        messageElement.scrollIntoView({ behavior: 'smooth', block: 'end' });
-      }, 100);
+      requestAnimationFrame(() => {
+        chatContainer.scrollTo({
+          top: chatContainer.scrollHeight,
+          behavior: 'smooth'
+        });
+      });
     }
 
     // Função para atualizar status de leitura da mensagem
@@ -394,23 +405,38 @@
     window.addEventListener('resize', () => {
       if (window.innerHeight < window.outerHeight) {
         // Teclado está aberto
-        setTimeout(() => {
-          const lastMessage = chatContainer.lastElementChild;
-          if (lastMessage) {
-            lastMessage.scrollIntoView({ behavior: 'smooth', block: 'end' });
-          }
-        }, 300);
+        requestAnimationFrame(() => {
+          chatContainer.scrollTo({
+            top: chatContainer.scrollHeight,
+            behavior: 'smooth'
+          });
+        });
       }
     });
 
     // Adicionar evento para scroll automático quando o foco muda para o input
     messageInput.addEventListener('focus', () => {
-      setTimeout(() => {
-        const lastMessage = chatContainer.lastElementChild;
-        if (lastMessage) {
-          lastMessage.scrollIntoView({ behavior: 'smooth', block: 'end' });
-        }
-      }, 300);
+      requestAnimationFrame(() => {
+        chatContainer.scrollTo({
+          top: chatContainer.scrollHeight,
+          behavior: 'smooth'
+        });
+      });
+    });
+
+    // Adicionar evento para scroll automático quando o conteúdo do chat muda
+    const observer = new MutationObserver(() => {
+      requestAnimationFrame(() => {
+        chatContainer.scrollTo({
+          top: chatContainer.scrollHeight,
+          behavior: 'smooth'
+        });
+      });
+    });
+
+    observer.observe(chatContainer, {
+      childList: true,
+      subtree: true
     });
   </script>
   <style>
@@ -577,6 +603,12 @@
       gap: 10px;
       scroll-behavior: smooth;
       -webkit-overflow-scrolling: touch;
+      height: 100vh;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
     }
 
     .message {
