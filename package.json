@@ -1,0 +1,12 @@
+{
+  "name": "chat-de-amor",
+  "version": "1.0.0",
+  "description": "Chat de Amor - Aplicativo de mensagens",
+  "scripts": {
+    "start": "npx http-server -p 8080"
+  },
+  "dependencies": {
+    "firebase": "^11.7.1",
+    "http-server": "^14.1.1"
+  }
+}

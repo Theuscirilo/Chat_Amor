@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Login - Chat de Amor</title>
+  <!-- Fonte Google -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <!-- Ícones -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Firebase -->
+  <script type="module">
+    // Import the functions you need from the SDKs you need
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+    import { getFirestore, doc, setDoc, updateDoc, serverTimestamp, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+    // Your web app's Firebase configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyC6LakJpl51gTNIO9XcZ4gEE55k7QrLeeI",
+      authDomain: "login-49652.firebaseapp.com",
+      projectId: "login-49652",
+      storageBucket: "login-49652.firebasestorage.app",
+      messagingSenderId: "621728818359",
+      appId: "1:621728818359:web:25a9f18e9558551f16d932",
+      measurementId: "G-MK12B3C8NQ"
+    };
+
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    // Elementos DOM
+    const loginForm = document.getElementById('login-form');
+    const usernameInput = document.getElementById('username');
+    const usernameError = document.getElementById('username-error');
+    const submitButton = document.getElementById('submit-button');
+    const loading = document.getElementById('loading');
+    
+    // Função para mostrar erro
+    function showError(element, message) {
+      element.textContent = message;
+      element.classList.add('show');
+    }
+
+    // Função para esconder erro
+    function hideError(element) {
+      element.classList.remove('show');
+    }
+
+    // Função para mostrar loading
+    function showLoading() {
+      loading.classList.add('show');
+      submitButton.disabled = true;
+    }
+
+    // Função para esconder loading
+    function hideLoading() {
+      loading.classList.remove('show');
+      submitButton.disabled = false;
+    }
+
+    // Função para mostrar notificação
+    function showNotification(title, message, isError = false) {
+      const notification = document.getElementById('notification');
+      const notificationTitle = document.getElementById('notification-title');
+      const notificationMessage = document.getElementById('notification-message');
+      
+      notificationTitle.textContent = title;
+      notificationMessage.textContent = message;
+      
+      if (isError) {
+        notification.classList.add('notification-error');
+      } else {
+        notification.classList.remove('notification-error');
+      }
+      
+      notification.classList.add('show');
+      
+      setTimeout(() => {
+        notification.classList.remove('show');
+      }, 3000);
+    }
+
+    // Função para fazer login
+    async function login(username) {
+      try {
+        showLoading();
+        hideError(usernameError);
+        console.log('Iniciando login...');
+
+        // Validar nome de usuário
+        if (!username || username.trim().length < 2) {
+          throw new Error('Por favor, digite um nome válido (mínimo 2 caracteres)');
+        }
+
+        // Criar email a partir do nome de usuário
+        const email = `${username.replace(/\s+/g, '').toLowerCase()}@chatdeamor.app`;
+        const password = '123456'; // Senha padrão
+        console.log('Email gerado:', email);
+
+        try {
+          // Tentar criar usuário
+          console.log('Tentando criar usuário...');
+          const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+          const user = userCredential.user;
+          console.log('Usuário criado:', user.uid);
+
+          // Gerar código de convite único apenas para novos usuários
+          const inviteCode = generateInviteCode();
+          console.log('Novo código de convite gerado:', inviteCode);
+
+          // Salvar dados do usuário
+          localStorage.setItem('userId', user.uid);
+          localStorage.setItem('userName', username);
+          localStorage.setItem('myInviteCode', inviteCode);
+
+          // Criar documento do usuário
+          console.log('Criando documento do usuário...');
+          await setDoc(doc(db, 'users', user.uid), {
+            username: username,
+            inviteCode: inviteCode,
+            online: true,
+            lastActive: serverTimestamp(),
+            createdAt: serverTimestamp()
+          });
+          console.log('Documento do usuário criado');
+
+          // Redirecionar para o chat
+          console.log('Redirecionando para o chat...');
+          window.location.href = 'chat.html';
+
+        } catch (error) {
+          console.error('Erro ao criar usuário:', error);
+          
+          // Se o usuário já existe, tentar fazer login
+          if (error.code === 'auth/email-already-in-use') {
+            console.log('Usuário já existe, tentando fazer login...');
+            try {
+              const userCredential = await signInWithEmailAndPassword(auth, email, password);
+              const user = userCredential.user;
+              console.log('Login realizado com sucesso:', user.uid);
+
+              // Buscar dados do usuário
+              const userDoc = await getDoc(doc(db, 'users', user.uid));
+              let inviteCode;
+
+              if (userDoc.exists()) {
+                const userData = userDoc.data();
+                // Manter o código de convite existente
+                inviteCode = userData.inviteCode;
+                console.log('Usando código de convite existente:', inviteCode);
+              } else {
+                // Se por algum motivo o documento não existir, criar um novo
+                inviteCode = generateInviteCode();
+                console.log('Gerando novo código de convite (documento não encontrado):', inviteCode);
+              }
+
+              // Salvar dados do usuário
+              localStorage.setItem('userId', user.uid);
+              localStorage.setItem('userName', username);
+              localStorage.setItem('myInviteCode', inviteCode);
+
+              // Atualizar documento do usuário mantendo o código de convite
+              await updateDoc(doc(db, 'users', user.uid), {
+                username: username,
+                online: true,
+                lastActive: serverTimestamp()
+              });
+
+              // Redirecionar para o chat
+              window.location.href = 'chat.html';
+            } catch (loginError) {
+              console.error('Erro no login:', loginError);
+              throw new Error('Erro ao fazer login: ' + loginError.message);
+            }
+          } else {
+            throw new Error('Erro ao criar conta: ' + error.message);
+          }
+        }
+
+      } catch (error) {
+        console.error('Erro no login:', error);
+        showError(usernameError, error.message);
+        hideLoading();
+      }
+    }
+
+    // Event listener do formulário
+    loginForm.addEventListener('submit', function(e) {
+      e.preventDefault();
+      const username = usernameInput.value.trim();
+      login(username);
+    });
+
+    // Verificar se há código de convite na URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const inviteCode = urlParams.get('invite');
+    if (inviteCode) {
+      localStorage.setItem('inviteCode', inviteCode);
+    }
+  </script>
+  <style>
+    :root {
+      --primary-dark: #1a1a2e;
+      --primary: #4834d4;
+      --primary-light: #6f5ff6;
+      --secondary: #ffaac3;
+      --accent: #fd6f96;
+      --bg-color: #f8f9fb;
+      --text-color: #1a1a2e;
+      --error-color: #ff4757;
+      --border-color: #e1e1e1;
+      --shadow: 0 8px 30px rgba(0, 0, 0, 0.05);
+      --gradient: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: var(--gradient);
+      color: var(--text-color);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 420px;
+    }
+
+    .login-box {
+      background-color: rgba(255, 255, 255, 0.95);
+      padding: 40px;
+      border-radius: 20px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      animation: loginAppear 0.5s ease-out;
+    }
+
+    @keyframes loginAppear {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .login-header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    .logo {
+      width: 80px;
+      height: 80px;
+      background: var(--gradient);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 20px;
+      box-shadow: 0 5px 15px rgba(72, 52, 212, 0.3);
+      animation: logoPulse 2s infinite;
+    }
+
+    @keyframes logoPulse {
+      0% {
+        transform: scale(1);
+      }
+      50% {
+        transform: scale(1.05);
+      }
+      100% {
+        transform: scale(1);
+      }
+    }
+
+    .logo i {
+      font-size: 2.5rem;
+      color: white;
+    }
+
+    h1 {
+      color: var(--primary);
+      margin-bottom: 10px;
+      font-size: 2rem;
+      font-weight: 600;
+    }
+
+    .login-header p {
+      color: #666;
+      font-size: 1rem;
+    }
+
+    .input-group {
+      margin-bottom: 25px;
+      position: relative;
+    }
+
+    .input-icon {
+      position: absolute;
+      left: 15px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #666;
+      font-size: 1.1rem;
+      transition: color 0.3s;
+    }
+
+    input {
+      width: 100%;
+      padding: 15px 15px 15px 45px;
+      border: 2px solid var(--border-color);
+      border-radius: 12px;
+      font-size: 1rem;
+      transition: all 0.3s;
+      background-color: #f8f9fb;
+    }
+
+    input:focus {
+      outline: none;
+      border-color: var(--primary);
+      background-color: white;
+      box-shadow: 0 0 0 4px rgba(72, 52, 212, 0.1);
+    }
+
+    input:focus + .input-icon {
+      color: var(--primary);
+    }
+
+    .error-message {
+      color: var(--error-color);
+      font-size: 0.85rem;
+      margin-top: 8px;
+      display: none;
+      padding-left: 15px;
+      animation: shake 0.5s;
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-5px); }
+      75% { transform: translateX(5px); }
+    }
+
+    .error-message.show {
+      display: block;
+    }
+
+    button {
+      width: 100%;
+      padding: 15px;
+      background: var(--gradient);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 1rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(72, 52, 212, 0.3);
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
+    button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    button i {
+      font-size: 1.1rem;
+      transition: transform 0.3s;
+    }
+
+    button:hover i {
+      transform: translateX(3px);
+    }
+
+    #loading {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(255, 255, 255, 0.9);
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      backdrop-filter: blur(5px);
+      -webkit-backdrop-filter: blur(5px);
+    }
+
+    #loading.show {
+      display: flex;
+    }
+
+    .loading-spinner {
+      width: 40px;
+      height: 40px;
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid var(--primary);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .notification {
+      position: fixed;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background-color: white;
+      box-shadow: var(--shadow);
+      border-radius: 12px;
+      padding: 15px 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      transition: all 0.3s ease-out;
+      z-index: 2000;
+      width: 90%;
+      max-width: 380px;
+      border-left: 5px solid var(--primary);
+      opacity: 0;
+      visibility: hidden;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      background-color: rgba(255, 255, 255, 0.95);
+    }
+
+    .notification.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .notification-error {
+      border-left: 5px solid var(--error-color);
+    }
+
+    .notification-icon {
+      font-size: 1.5rem;
+      color: var(--primary);
+    }
+
+    .notification-error .notification-icon {
+      color: var(--error-color);
+    }
+
+    .notification-content {
+      flex: 1;
+    }
+
+    .notification-title {
+      font-weight: 600;
+      font-size: 0.95rem;
+      margin-bottom: 2px;
+    }
+
+    .notification-message {
+      font-size: 0.85rem;
+      color: #666;
+    }
+
+    @media (max-width: 480px) {
+      .container {
+        padding: 15px;
+      }
+
+      .login-box {
+        padding: 30px 20px;
+      }
+
+      .logo {
+        width: 70px;
+        height: 70px;
+      }
+
+      .logo i {
+        font-size: 2rem;
+      }
+
+      h1 {
+        font-size: 1.75rem;
+      }
+
+      input {
+        padding: 12px 12px 12px 40px;
+        font-size: 0.95rem;
+      }
+
+      button {
+        padding: 12px;
+        font-size: 0.95rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="login-box">
+      <div class="login-header">
+        <div class="logo">
+          <i class="fas fa-heart"></i>
+        </div>
+        <h1>Chat de Amor</h1>
+        <p>Conecte-se com quem você ama</p>
+      </div>
+      
+      <form id="login-form">
+        <div class="input-group">
+          <div class="input-icon">
+            <i class="fas fa-user"></i>
+          </div>
+          <input type="text" id="username" placeholder="Digite seu nome" required>
+          <div class="error-message" id="username-error"></div>
+        </div>
+        <button type="submit" id="submit-button">
+          <span>Entrar</span>
+          <i class="fas fa-arrow-right"></i>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <div id="loading">
+    <div class="loading-spinner"></div>
+  </div>
+
+  <div class="notification" id="notification">
+    <div class="notification-icon">
+      <i class="fas fa-bell"></i>
+    </div>
+    <div class="notification-content">
+      <div class="notification-title" id="notification-title">Título da notificação</div>
+      <div class="notification-message" id="notification-message">Mensagem da notificação.</div>
+    </div>
+  </div>
+
+  <script>
+    // Configuração do Firebase
+    const firebaseConfig = {
+      apiKey: "AIzaSyC6LakJpl51gTNIO9XcZ4gEE55k7QrLeeI",
+      authDomain: "login-49652.firebaseapp.com",
+      projectId: "login-49652",
+      storageBucket: "login-49652.firebasestorage.app",
+      messagingSenderId: "621728818359",
+      appId: "1:621728818359:web:25a9f18e9558551f16d932",
+      measurementId: "G-MK12B3C8NQ"
+    };
+
+    // Inicialização do Firebase
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+    
+    document.addEventListener('DOMContentLoaded', function() {
+      // Elementos DOM
+      const loginForm = document.getElementById('login-form');
+      const usernameInput = document.getElementById('username');
+      const usernameError = document.getElementById('username-error');
+      const submitButton = document.getElementById('submit-button');
+      const loading = document.getElementById('loading');
+      
+      // Gerar código de convite
+      function generateInviteCode() {
+        // Gerar um código mais longo e único
+        const timestamp = Date.now().toString(36);
+        const random = Math.random().toString(36).substring(2, 8);
+        const code = (timestamp + random).toUpperCase();
+        console.log('Novo código de convite gerado:', code);
+        return code;
+      }
+      
+      // Função para fazer login
+      async function login(username) {
+        try {
+          showLoading();
+          hideError(usernameError);
+          console.log('Iniciando login...');
+
+          // Validar nome de usuário
+          if (!username || username.trim().length < 2) {
+            throw new Error('Por favor, digite um nome válido (mínimo 2 caracteres)');
+          }
+
+          // Criar email a partir do nome de usuário
+          const email = `${username.replace(/\s+/g, '').toLowerCase()}@chatdeamor.app`;
+          const password = '123456'; // Senha padrão
+          console.log('Email gerado:', email);
+
+          try {
+            // Tentar criar usuário
+            console.log('Tentando criar usuário...');
+            const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+            const user = userCredential.user;
+            console.log('Usuário criado:', user.uid);
+
+            // Gerar código de convite único apenas para novos usuários
+            const inviteCode = generateInviteCode();
+            console.log('Novo código de convite gerado:', inviteCode);
+
+            // Salvar dados do usuário
+            localStorage.setItem('userId', user.uid);
+            localStorage.setItem('userName', username);
+            localStorage.setItem('myInviteCode', inviteCode);
+
+            // Criar documento do usuário
+            console.log('Criando documento do usuário...');
+            await setDoc(doc(db, 'users', user.uid), {
+              username: username,
+              inviteCode: inviteCode,
+              online: true,
+              lastActive: serverTimestamp(),
+              createdAt: serverTimestamp()
+            });
+            console.log('Documento do usuário criado');
+
+            // Redirecionar para o chat
+            console.log('Redirecionando para o chat...');
+            window.location.href = 'chat.html';
+
+          } catch (error) {
+            console.error('Erro ao criar usuário:', error);
+            
+            // Se o usuário já existe, tentar fazer login
+            if (error.code === 'auth/email-already-in-use') {
+              console.log('Usuário já existe, tentando fazer login...');
+              try {
+                const userCredential = await signInWithEmailAndPassword(auth, email, password);
+                const user = userCredential.user;
+                console.log('Login realizado com sucesso:', user.uid);
+
+                // Buscar dados do usuário
+                const userDoc = await getDoc(doc(db, 'users', user.uid));
+                let inviteCode;
+
+                if (userDoc.exists()) {
+                  const userData = userDoc.data();
+                  // Manter o código de convite existente
+                  inviteCode = userData.inviteCode;
+                  console.log('Usando código de convite existente:', inviteCode);
+                } else {
+                  // Se por algum motivo o documento não existir, criar um novo
+                  inviteCode = generateInviteCode();
+                  console.log('Gerando novo código de convite (documento não encontrado):', inviteCode);
+                }
+
+                // Salvar dados do usuário
+                localStorage.setItem('userId', user.uid);
+                localStorage.setItem('userName', username);
+                localStorage.setItem('myInviteCode', inviteCode);
+
+                // Atualizar documento do usuário mantendo o código de convite
+                await updateDoc(doc(db, 'users', user.uid), {
+                  username: username,
+                  online: true,
+                  lastActive: serverTimestamp()
+                });
+
+                // Redirecionar para o chat
+                window.location.href = 'chat.html';
+              } catch (loginError) {
+                console.error('Erro no login:', loginError);
+                throw new Error('Erro ao fazer login: ' + loginError.message);
+              }
+            } else {
+              throw new Error('Erro ao criar conta: ' + error.message);
+            }
+          }
+
+        } catch (error) {
+          console.error('Erro no login:', error);
+          showError(usernameError, error.message);
+          hideLoading();
+        }
+      }
+
+      // Event listener do formulário
+      loginForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const username = usernameInput.value.trim();
+        login(username);
+      });
+      
+      // Login anônimo
+      document.getElementById('anonymous-login').addEventListener('click', function() {
+        try {
+          // Mostrar loading
+          this.disabled = true;
+          this.innerHTML = '<div class="loading-spinner"></div> Conectando...';
+          
+          // Mostrar notificação
+          showNotification('Conectando', 'Realizando login anônimo...', false);
+          
+          // Fazer login anônimo
+          auth.signInAnonymously()
+            .then((userCredential) => {
+              // Login anônimo bem sucedido
+              const user = userCredential.user;
+              
+              // Gerar nome temporário
+              const tempName = "Usuário" + Math.floor(Math.random() * 10000);
+              
+              // Pegar código de convite, se houver
+              const inviteCode = inviteLink.value.trim();
+              
+              // Salvar dados
+              saveUserData(user.uid, tempName, inviteCode);
+            })
+            .catch((error) => {
+              console.error('Erro no login anônimo:', error);
+              showNotification('Erro', 'Falha no login anônimo: ' + error.message, true);
+              
+              // Resetar botão
+              this.disabled = false;
+              this.innerHTML = 'Entrar sem conta';
+            });
+        } catch (error) {
+          console.error('Erro no login anônimo:', error);
+          showNotification('Erro', 'Ocorreu um erro inesperado. Tente novamente.', true);
+          
+          // Resetar botão
+          this.disabled = false;
+          this.innerHTML = 'Entrar sem conta';
+        }
+      });
+      
+      // Verificar se já está logado
+      auth.onAuthStateChanged(function(user) {
+        if (user) {
+          // Verificar URL para saber se o usuário está tentando usar um novo convite
+          const urlParams = new URLSearchParams(window.location.search);
+          const newInvite = urlParams.get('invite');
+          
+          // Se não tiver novo convite, redirecionar para o chat
+          if (!newInvite) {
+            // Já está logado, mostrar notificação e redirecionar
+            showNotification('Já conectado', 'Redirecionando para o chat...', false);
+            
+            // Pequeno atraso para mostrar a notificação
+            setTimeout(() => {
+              window.location.href = 'chat.html';
+            }, 1000);
+          } else {
+            // Se tiver novo convite, atualizar e salvar
+            inviteLink.value = newInvite;
+            showNotification('Novo convite', 'Você pode usar este novo convite. Clique em Entrar.', false);
+          }
+        }
+      });
+    });
+  </script>
+</body>
+</html>
