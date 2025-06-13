@@ -258,6 +258,9 @@
         
         await addDoc(collection(db, 'messages'), message);
         messageInput.value = '';
+        
+        // Focar no input após enviar mensagem
+        messageInput.focus();
       } catch (error) {
         console.error('Erro ao enviar mensagem:', error);
         showNotification('Erro', 'Falha ao enviar mensagem: ' + error.message, true);
@@ -300,7 +303,11 @@
       `;
       
       chatContainer.appendChild(messageElement);
-      chatContainer.scrollTop = chatContainer.scrollHeight;
+      
+      // Scroll suave para a última mensagem
+      setTimeout(() => {
+        messageElement.scrollIntoView({ behavior: 'smooth', block: 'end' });
+      }, 100);
     }
 
     // Função para atualizar status de leitura da mensagem
@@ -381,6 +388,29 @@
         console.error('Erro ao fazer logout:', error);
         showNotification('Erro', 'Falha ao fazer logout', true);
       }
+    });
+
+    // Adicionar evento para scroll automático quando o teclado é aberto em dispositivos móveis
+    window.addEventListener('resize', () => {
+      if (window.innerHeight < window.outerHeight) {
+        // Teclado está aberto
+        setTimeout(() => {
+          const lastMessage = chatContainer.lastElementChild;
+          if (lastMessage) {
+            lastMessage.scrollIntoView({ behavior: 'smooth', block: 'end' });
+          }
+        }, 300);
+      }
+    });
+
+    // Adicionar evento para scroll automático quando o foco muda para o input
+    messageInput.addEventListener('focus', () => {
+      setTimeout(() => {
+        const lastMessage = chatContainer.lastElementChild;
+        if (lastMessage) {
+          lastMessage.scrollIntoView({ behavior: 'smooth', block: 'end' });
+        }
+      }, 300);
     });
   </script>
   <style>
@@ -545,6 +575,8 @@
       display: flex;
       flex-direction: column;
       gap: 10px;
+      scroll-behavior: smooth;
+      -webkit-overflow-scrolling: touch;
     }
 
     .message {
@@ -786,6 +818,7 @@
 
       .chat-container {
         padding-top: 140px;
+        padding-bottom: 80px;
       }
 
       .message {
