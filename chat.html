@@ -262,10 +262,11 @@
         // Focar no input após enviar mensagem
         messageInput.focus();
         
-        // Scroll para a última mensagem
+        // Scroll para a última mensagem com offset
         requestAnimationFrame(() => {
+          const scrollOffset = 100; // Offset adicional para garantir que a mensagem fique visível
           chatContainer.scrollTo({
-            top: chatContainer.scrollHeight,
+            top: chatContainer.scrollHeight + scrollOffset,
             behavior: 'smooth'
           });
         });
@@ -312,10 +313,11 @@
       
       chatContainer.appendChild(messageElement);
       
-      // Scroll suave para a última mensagem
+      // Scroll suave para a última mensagem com offset
       requestAnimationFrame(() => {
+        const scrollOffset = 100; // Offset adicional para garantir que a mensagem fique visível
         chatContainer.scrollTo({
-          top: chatContainer.scrollHeight,
+          top: chatContainer.scrollHeight + scrollOffset,
           behavior: 'smooth'
         });
       });
@@ -406,8 +408,9 @@
       if (window.innerHeight < window.outerHeight) {
         // Teclado está aberto
         requestAnimationFrame(() => {
+          const scrollOffset = 100; // Offset adicional para garantir que a mensagem fique visível
           chatContainer.scrollTo({
-            top: chatContainer.scrollHeight,
+            top: chatContainer.scrollHeight + scrollOffset,
             behavior: 'smooth'
           });
         });
@@ -417,8 +420,9 @@
     // Adicionar evento para scroll automático quando o foco muda para o input
     messageInput.addEventListener('focus', () => {
       requestAnimationFrame(() => {
+        const scrollOffset = 100; // Offset adicional para garantir que a mensagem fique visível
         chatContainer.scrollTo({
-          top: chatContainer.scrollHeight,
+          top: chatContainer.scrollHeight + scrollOffset,
           behavior: 'smooth'
         });
       });
@@ -427,8 +431,9 @@
     // Adicionar evento para scroll automático quando o conteúdo do chat muda
     const observer = new MutationObserver(() => {
       requestAnimationFrame(() => {
+        const scrollOffset = 100; // Offset adicional para garantir que a mensagem fique visível
         chatContainer.scrollTo({
-          top: chatContainer.scrollHeight,
+          top: chatContainer.scrollHeight + scrollOffset,
           behavior: 'smooth'
         });
       });
@@ -611,10 +616,22 @@
       bottom: 0;
     }
 
+    @media (max-width: 768px) {
+      .chat-container {
+        padding-top: 160px;
+        padding-bottom: 100px;
+      }
+    }
+
     .message {
       max-width: 70%;
       display: flex;
       flex-direction: column;
+      margin-bottom: 10px;
+    }
+
+    .message:first-child {
+      margin-top: auto;
     }
 
     .message.sent {
