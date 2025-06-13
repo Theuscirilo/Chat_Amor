@@ -14,6 +14,16 @@
     import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
     import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs, addDoc, serverTimestamp, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
+    // Função para gerar código de convite único
+    function generateInviteCode() {
+      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+      let code = '';
+      for (let i = 0; i < 6; i++) {
+        code += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      return code;
+    }
+
     // Your web app's Firebase configuration
     const firebaseConfig = {
       apiKey: "AIzaSyC6LakJpl51gTNIO9XcZ4gEE55k7QrLeeI",
@@ -49,16 +59,6 @@
     let messagesListener = null;
     let userListener = null;
 
-    // Função para gerar código de convite único
-    function generateInviteCode() {
-      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-      let code = '';
-      for (let i = 0; i < 6; i++) {
-        code += chars.charAt(Math.floor(Math.random() * chars.length));
-      }
-      return code;
-    }
-
     // Verificar autenticação
     onAuthStateChanged(auth, async (user) => {
       if (user) {
@@ -81,7 +81,11 @@
             myInviteCode.value = inviteCode;
           } else {
             // Se não existir documento, gerar novo código
-            const inviteCode = generateInviteCode();
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+            let inviteCode = '';
+            for (let i = 0; i < 6; i++) {
+              inviteCode += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
             console.log('Gerando novo código de convite:', inviteCode);
             
             localStorage.setItem('myInviteCode', inviteCode);

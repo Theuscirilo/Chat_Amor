@@ -33,6 +33,16 @@
       const auth = getAuth(app);
       const db = getFirestore(app);
 
+      // Função para gerar código de convite único
+      function generateInviteCode() {
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+        let code = '';
+        for (let i = 0; i < 6; i++) {
+          code += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+        return code;
+      }
+
       // Elementos DOM
       const loginForm = document.getElementById('login-form');
       const usernameInput = document.getElementById('username');
@@ -595,16 +605,6 @@
         const usernameError = document.getElementById('username-error');
         const submitButton = document.getElementById('submit-button');
         const loading = document.getElementById('loading');
-        
-        // Gerar código de convite
-        function generateInviteCode() {
-          // Gerar um código mais longo e único
-          const timestamp = Date.now().toString(36);
-          const random = Math.random().toString(36).substring(2, 8);
-          const code = (timestamp + random).toUpperCase();
-          console.log('Novo código de convite gerado:', code);
-          return code;
-        }
         
         // Função para fazer login
         async function login(username) {
