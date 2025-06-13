@@ -49,6 +49,16 @@
     let messagesListener = null;
     let userListener = null;
 
+    // Função para gerar código de convite único
+    function generateInviteCode() {
+      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+      let code = '';
+      for (let i = 0; i < 6; i++) {
+        code += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      return code;
+    }
+
     // Verificar autenticação
     onAuthStateChanged(auth, async (user) => {
       if (user) {
@@ -70,24 +80,21 @@
             localStorage.setItem('myInviteCode', inviteCode);
             myInviteCode.value = inviteCode;
           } else {
-            // Se não existir documento, usar o código do localStorage
-            const inviteCode = localStorage.getItem('myInviteCode');
-            console.log('Usando código de convite do localStorage:', inviteCode);
+            // Se não existir documento, gerar novo código
+            const inviteCode = generateInviteCode();
+            console.log('Gerando novo código de convite:', inviteCode);
             
-            if (inviteCode) {
-              myInviteCode.value = inviteCode;
-              // Criar documento com o código existente
-              await setDoc(doc(db, 'users', user.uid), {
-                username: localStorage.getItem('userName') || 'Usuário',
-                inviteCode: inviteCode,
-                online: true,
-                lastActive: serverTimestamp(),
-                createdAt: serverTimestamp()
-              });
-            } else {
-              console.error('Nenhum código de convite encontrado');
-              showNotification('Erro', 'Código de convite não encontrado', true);
-            }
+            localStorage.setItem('myInviteCode', inviteCode);
+            myInviteCode.value = inviteCode;
+            
+            // Criar documento com o novo código
+            await setDoc(doc(db, 'users', user.uid), {
+              username: localStorage.getItem('userName') || 'Usuário',
+              inviteCode: inviteCode,
+              online: true,
+              lastActive: serverTimestamp(),
+              createdAt: serverTimestamp()
+            });
           }
 
           // Verificar se há código de convite na URL
