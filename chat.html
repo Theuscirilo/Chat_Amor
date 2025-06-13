@@ -423,12 +423,15 @@
       left: 0;
       right: 0;
       z-index: 100;
+      flex-wrap: wrap;
+      gap: 10px;
     }
 
     .header-left {
       display: flex;
       align-items: center;
       gap: 10px;
+      order: 1;
     }
 
     .status-indicator {
@@ -452,11 +455,15 @@
       display: flex;
       align-items: center;
       gap: 15px;
+      order: 2;
+      flex-wrap: wrap;
+      justify-content: flex-end;
     }
 
     .invite-section {
       display: flex;
       gap: 10px;
+      flex-wrap: wrap;
     }
 
     .invite-input {
@@ -490,6 +497,7 @@
       display: flex;
       align-items: center;
       gap: 10px;
+      flex-wrap: wrap;
     }
 
     .my-invite-code {
@@ -737,6 +745,93 @@
     .notification-message {
       font-size: 0.85rem;
       color: #666;
+    }
+
+    @media (max-width: 768px) {
+      .chat-header {
+        padding: 10px;
+      }
+
+      .header-right {
+        width: 100%;
+        order: 1;
+        margin-bottom: 10px;
+      }
+
+      .header-left {
+        order: 2;
+        width: 100%;
+        justify-content: center;
+      }
+
+      .invite-section {
+        width: 100%;
+        justify-content: center;
+      }
+
+      .my-invite {
+        width: 100%;
+        justify-content: center;
+      }
+
+      .invite-input {
+        flex: 1;
+        min-width: 150px;
+      }
+
+      .my-invite-code {
+        flex: 1;
+        min-width: 150px;
+      }
+
+      .chat-container {
+        padding-top: 140px;
+      }
+
+      .message {
+        max-width: 85%;
+      }
+
+      .chat-input {
+        padding: 10px;
+      }
+
+      .message-input {
+        font-size: 0.9rem;
+      }
+
+      .send-button {
+        padding: 10px 15px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .chat-header {
+        padding: 8px;
+      }
+
+      .connect-button,
+      .copy-button,
+      .logout-button {
+        padding: 6px 12px;
+        font-size: 0.9rem;
+      }
+
+      .status-text {
+        font-size: 0.8rem;
+      }
+
+      .message {
+        max-width: 90%;
+      }
+
+      .message-text {
+        font-size: 0.9rem;
+      }
+
+      .message-info {
+        font-size: 0.7rem;
+      }
     }
   </style>
 </head>

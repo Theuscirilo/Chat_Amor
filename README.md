@@ -4,7 +4,7 @@ Um aplicativo de chat em tempo real com conexão via código de convite, desenvo
 
 ## 🌐 Demo Online
 
-Acesse a versão online do chat: [Chat de Amor](https://theuscirilo.github.io/Chat_Amor/)
+Acesse a versão online do chat: [Chat de Amor](https://theuscirilo.github.io/chat-de-amor)
 
 ## ✨ Funcionalidades
 
